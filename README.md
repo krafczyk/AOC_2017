@@ -1,6 +1,6 @@
-# AOC_2018
+# AOC_2017
 
-These are my solutions to [Advent of Code 2018](https://adventofcode.com/2018)!
+These are my solutions to [Advent of Code 2017](https://adventofcode.com/2017)!
 
 ## Building
 
