@@ -63,8 +63,8 @@ int main(int argc, char** argv) {
 	}
 
 	size_t sum = 0;
-	for(size_t idx=0; idx < pattern.size(); ++idx) {
-		size_t next_idx = (idx+1)%pattern.size();
+	for(size_t idx=0; idx < digits.size(); ++idx) {
+		size_t next_idx = (idx+1)%digits.size();
 		if(digits[idx] == digits[next_idx]) {
 			sum += digits[idx];
 		}
