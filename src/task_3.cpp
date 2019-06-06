@@ -37,12 +37,11 @@ int main(int argc, char** argv) {
 	std::string line;
 	while(std::getline(infile, line)) {
 		std::vector<int> line_values;
-		std::stringstream ss;
-		ss.str(line);
-		std::string vals;
-		while(std::getline(ss, vals, ' ')) {
-			line_values.push_back(std::atoi(vals.c_str()));
-		}
+		std::istringstream iss(line);
+        int val;
+        while(iss >> val) {
+            line_values.push_back(val);
+        }
 		data.push_back(line_values);
 	}
 
