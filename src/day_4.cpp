@@ -71,7 +71,36 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::cout << "There are " << num_valid << " valid passphrases" << std::endl;
+    std::cout << "Task 1: There are " << num_valid << " valid passphrases" << std::endl;
+
+    num_valid = 0;
+    for(const auto& passphrase: passphrases) {
+        bool is_valid = true;
+        for(auto word_it = passphrase.cbegin(); word_it != passphrase.cend()-1; ++word_it) {
+            for(auto word_it_2 = word_it+1; word_it_2 != passphrase.cend(); ++word_it_2) {
+                std::map<char,int> word_1_map;
+                for(size_t idx = 0; idx < word_it->size(); ++idx) {
+                    word_1_map[(*word_it)[idx]] += 1;
+                }
+                std::map<char,int> word_2_map;
+                for(size_t idx = 0; idx < word_it_2->size(); ++idx) {
+                    word_2_map[(*word_it_2)[idx]] += 1;
+                }
+                if(word_1_map == word_2_map) {
+                    is_valid = false;
+                    break;
+                }
+            }
+            if(!is_valid) {
+                break;
+            }
+        }
+        if(is_valid) {
+            num_valid += 1;
+        }
+    }
+
+    std::cout << "Task 2: There are " << num_valid << " valid passphrases" << std::endl;
 
 	return 0;
 }
