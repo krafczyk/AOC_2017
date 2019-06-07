@@ -212,3 +212,11 @@ long pair_hash_l(long x, long y) {
     long C = (long)((A >= B ? A*A+A+B : A+B*B)/2);
     return ((x < 0 && y < 0) || (x >= 0 && y >= 0) ? C : -C - 1);
 }
+
+template<class T>
+T fetch_value(const std::string& str) {
+    std::istringstream iss(str);
+    T val = 0;
+    iss >> val;
+    return val;
+}
