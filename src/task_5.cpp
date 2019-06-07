@@ -14,6 +14,37 @@ typedef std::pair<type,type> point;
 
 std::vector<point> dirs = { {0,1}, {-1,0}, {0,-1}, {1,0}};
 
+point val_pos(type val) {
+    // First find first N^2 which is >=p
+
+    type N = 0;
+    while((2*N+1)*(2*N+1) < val) {
+        N += 1;
+    }
+
+    // Amount from start of outer ring.
+    type n = val - (2*N-1)*(2*N-1);
+
+    std::cout << "number of positions to go: " << n << std::endl;
+
+    point position(N,-N);
+
+    for(const point& dir: dirs) {
+        type steps = 0;
+        if(n < 2*N) {
+            steps = n;
+        } else {
+            steps = 2*N;
+        }
+        position = point(position.first+steps*dir.first,position.second+steps*dir.second);
+        n -= steps;
+        if(n == 0) {
+            break;
+        }
+    }
+    return position;
+}
+
 int main(int argc, char** argv) {
 	// Parse Arguments
 	type array_position;
@@ -33,35 +64,7 @@ int main(int argc, char** argv) {
 
     // First find first N^2 which is >=p
 
-    type N = 0;
-    while((2*N+1)*(2*N+1) < array_position) {
-        N += 1;
-    }
-
-    if(verbose) {
-        std::cout << "First N where (2N+1)^2 greater or equal: " << N << std::endl;
-    }
-
-    // Amount from start of outer ring.
-    type n = array_position - (2*N-1)*(2*N-1);
-
-    std::cout << "number of positions to go: " << n << std::endl;
-
-    point position(N,-N);
-
-    for(const point& dir: dirs) {
-        type steps = 0;
-        if(n < 2*N) {
-            steps = n;
-        } else {
-            steps = 2*N;
-        }
-        position = point(position.first+steps*dir.first,position.second+steps*dir.second);
-        n -= steps;
-        if(n == 0) {
-            break;
-        }
-    }
+    point position = val_pos(array_position);
 
     std::cout << "final position: " << position.first << "," << position.second << std::endl;
     std::cout << "steps required to carry: " << (std::abs(position.first)+std::abs(position.second)) << std::endl;
