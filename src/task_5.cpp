@@ -13,6 +13,8 @@ typedef int type;
 typedef std::pair<type,type> point;
 
 std::vector<point> dirs = { {0,1}, {-1,0}, {0,-1}, {1,0}};
+std::vector<point> neighbors = { {1,0}, {1,1}, {0,1}, {-1,1}, 
+                                 {-1,0}, {-1,-1}, {0,-1}, {1,-1}};
 
 point val_pos(type val) {
     // First find first N^2 which is >=p
@@ -24,8 +26,6 @@ point val_pos(type val) {
 
     // Amount from start of outer ring.
     type n = val - (2*N-1)*(2*N-1);
-
-    std::cout << "number of positions to go: " << n << std::endl;
 
     point position(N,-N);
 
@@ -68,6 +68,30 @@ int main(int argc, char** argv) {
 
     std::cout << "final position: " << position.first << "," << position.second << std::endl;
     std::cout << "steps required to carry: " << (std::abs(position.first)+std::abs(position.second)) << std::endl;
+
+    std::map<point,map_val<type>> computed_values;
+
+    type n = 1;
+    point pos = val_pos(n);
+    computed_values[pos] = 1;
+
+    while(true) {
+        // Go to next step
+        n += 1;
+        pos = val_pos(n);
+        type value = 0;
+        for(const point& dir: neighbors) {
+            point neighbor(pos.first+dir.first,pos.second+dir.second);
+            if(computed_values[neighbor].set) {
+                value += computed_values[neighbor].value;
+            }
+        }
+        computed_values[pos] = value;
+        if(value > array_position) {
+            std::cout << "The first value larger than " << array_position << " is " << computed_values[pos].value << std::endl;
+            break;
+        }
+    }
 
 	return 0;
 }
