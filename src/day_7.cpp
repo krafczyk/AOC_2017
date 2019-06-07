@@ -73,5 +73,33 @@ int main(int argc, char** argv) {
         node_map[name] = new_node;
     }
 
+    std::map<std::string,int> num_parents;
+    for(auto node: node_list) {
+        num_parents[node->name] = 0;
+    }
+    for(auto node: node_list) {
+        for(auto node_2: node_list) {
+            if(node_2 == node) {
+                // Skip case where its the same node.
+                continue;
+            }
+            if(hasElement(node_2->child_names, node->name)) {
+                num_parents[node->name] += 1;
+            }
+        }
+    }
+    std::string root_node;
+    for(auto& p: num_parents) {
+        if(p.second == 0) {
+            if(root_node != "") {
+                std::cerr << "There are more than one root node candidates!!" << std::endl;
+            } else {
+                root_node = p.first;
+            }
+        }
+    }
+
+    std::cout << "Task 1: the bottom program is: " << root_node << std::endl;
+
 	return 0;
 }
