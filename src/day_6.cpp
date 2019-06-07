@@ -93,7 +93,16 @@ int main(int argc, char** argv) {
         num += 1;
     }
 
-    std::cout << "There were " << num << " redistributions before a repeat!" << std::endl;
+    std::cout << "Task 1: There were " << num << " redistributions before a repeat!" << std::endl;
+
+    int initial = 0;
+    for(; initial < num; ++initial) {
+        if(encountered_banks[initial] == banks) {
+            break;
+        }
+    }
+
+    std::cout << "Task 2: The loop length was: " << num-initial << std::endl;
 
 	return 0;
 }
