@@ -29,5 +29,28 @@ int main(int argc, char** argv) {
 	// Open input as stream
 	std::ifstream infile(input_filepath);
 
+    std::vector<int> jumps;
+
+    std::string line;
+    while(std::getline(infile, line)) {
+        jumps.push_back(fetch_value<int>(line));
+    }
+
+    if(verbose) {
+        std::cout << "Received jumps: " << std::endl;
+        for(auto& i : jumps) {
+            std::cout << i << std::endl;
+        }
+    }
+
+    int inst = 0;
+    int num = 0;
+    do {
+        inst += (jumps[inst]++);
+        num += 1;
+    } while(inst < (int)jumps.size());
+
+    std::cout << "There were " << num << " instructions executed" << std::endl;
+
 	return 0;
 }
