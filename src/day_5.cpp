@@ -37,20 +37,37 @@ int main(int argc, char** argv) {
     }
 
     if(verbose) {
-        std::cout << "Received jumps: " << std::endl;
+        std::cout << "Read jumps: " << std::endl;
         for(auto& i : jumps) {
             std::cout << i << std::endl;
         }
     }
 
+    std::vector<int> jumps_copy = jumps;
+
     int inst = 0;
     int num = 0;
     do {
-        inst += (jumps[inst]++);
+        inst += (jumps_copy[inst]++);
         num += 1;
+    } while(inst < (int)jumps_copy.size());
+
+    std::cout << "Part 1: There were " << num << " instructions executed" << std::endl;
+
+    inst = 0;
+    num = 0;
+    do {
+        int prev_inst = inst;
+        int offset = jumps[inst];
+        inst += offset;
+        num += 1;
+        if(offset >= 3) {
+            jumps[prev_inst] -= 1;
+        } else {
+            jumps[prev_inst] += 1;
+        }
     } while(inst < (int)jumps.size());
 
-    std::cout << "There were " << num << " instructions executed" << std::endl;
-
+    std::cout << "Part 2: There were " << num << " instructions executed" << std::endl;
 	return 0;
 }
