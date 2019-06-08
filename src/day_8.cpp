@@ -15,7 +15,8 @@ typedef int type;
 
 class conditional {
     public:
-        bool operator()(type a, type b);
+        virtual ~conditional() {}
+        virtual bool operator()(type a, type b) = 0;
 };
 
 class gt : public conditional {
@@ -84,18 +85,19 @@ class lteq : public conditional {
         }
 };
 
-std::unordered_map<std::string,conditional> conditionals = {
-    {">", gt()},
-    {"<", lt()},
-    {"==", eq()},
-    {"!=", neq()},
-    {">=", gteq()},
-    {"<=", lteq()},
+std::unordered_map<std::string,conditional*> conditionals = {
+    {">", (conditional*) (new gt())},
+    {"<", (conditional*) (new lt())},
+    {"==", (conditional*) (new eq())},
+    {"!=", (conditional*) (new neq())},
+    {">=", (conditional*) (new gteq())},
+    {"<=", (conditional*) (new lteq())},
 };
 
 class operation {
     public:
-        type operator()(type a, type b);
+        virtual ~operation() {};
+        virtual type operator()(type a, type b) = 0;
 };
 
 class increase : public operation {
@@ -112,9 +114,9 @@ class decrease : public operation {
         }
 };
 
-std::unordered_map<std::string, operation> operations = {
-    {"inc", increase()},
-    {"dec", decrease()},
+std::unordered_map<std::string, operation*> operations = {
+    {"inc", (operation*) (new increase())},
+    {"dec", (operation*) (new decrease())},
 };
 
 
@@ -155,8 +157,8 @@ int main(int argc, char** argv) {
         std::string conditional_reg = instruction_match[4].str();
         std::string conditional_op = instruction_match[5].str();
         type conditional_val = fetch_value<type>(instruction_match[6].str());
-        if(conditionals[conditional_op](reg_values[conditional_reg],conditional_val)) {
-            reg_values[target_reg] = operations[target_op](reg_values[target_reg],target_mod_val);
+        if((*conditionals[conditional_op])(reg_values[conditional_reg],conditional_val)) {
+            reg_values[target_reg] = (*operations[target_op])(reg_values[target_reg],target_mod_val);
         }
     }
 
@@ -169,6 +171,11 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "Task 1: The largest register value is: " << max_val << std::endl;
+
+    // cleanup
+    for(auto& v: conditionals) {
+        delete v.second;
+    }
 
 	return 0;
 }
