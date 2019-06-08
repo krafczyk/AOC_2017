@@ -145,6 +145,7 @@ int main(int argc, char** argv) {
 
     std::regex instruction_regex("^([a-z]*) (inc|dec) ([0-9\\-]*) if ([a-z]*) ([><=!]*) ([0-9\\-]*)$", std::regex::ECMAScript);
     std::string line;
+    type max_val = std::numeric_limits<type>::min();
     while(std::getline(infile, line)) {
         std::smatch instruction_match;
         if(!std::regex_match(line, instruction_match,instruction_regex)) {
@@ -160,20 +161,29 @@ int main(int argc, char** argv) {
         if((*conditionals[conditional_op])(reg_values[conditional_reg],conditional_val)) {
             reg_values[target_reg] = (*operations[target_op])(reg_values[target_reg],target_mod_val);
         }
-    }
-
-    type max_val = std::numeric_limits<type>::min();
-
-    for(auto& v: reg_values) {
-        if(v.second > max_val) {
-            max_val = v.second;
+        for(auto& v: reg_values) {
+            if(v.second > max_val) {
+                max_val = v.second;
+            }
         }
     }
 
-    std::cout << "Task 1: The largest register value is: " << max_val << std::endl;
+    type max_val_end = std::numeric_limits<type>::min();
+
+    for(auto& v: reg_values) {
+        if(v.second > max_val_end) {
+            max_val_end = v.second;
+        }
+    }
+
+    std::cout << "Task 1: The largest register value is: " << max_val_end << std::endl;
+    std::cout << "Task 2: The largest value stored was: " << max_val << std::endl;
 
     // cleanup
     for(auto& v: conditionals) {
+        delete v.second;
+    }
+    for(auto& v: operations) {
         delete v.second;
     }
 
