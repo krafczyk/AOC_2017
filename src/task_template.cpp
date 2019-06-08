@@ -3,9 +3,11 @@
 #include <string>
 #include <set>
 #include <map>
+#include <unordered_map>
 #include <sstream>
 #include <limits>
 #include <algorithm>
+#include <regex>
 #include "ArgParseStandalone.h"
 #include "utilities.h"
 
