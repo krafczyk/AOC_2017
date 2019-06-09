@@ -50,6 +50,7 @@ int build_tree(node* parent, const std::string& input, size_t idx) {
     while(idx < input.size()) {
         // Handle exclamation marks.
         if(ignore_next_char) {
+            ignore_next_char = false;
             idx++;
             continue;
         }
