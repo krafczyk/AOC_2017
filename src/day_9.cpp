@@ -44,7 +44,7 @@ int tree_score(node* root) {
     return score;
 }
 
-int build_tree(node* parent, const std::string& input, size_t idx) {
+int build_tree(node* parent, const std::string& input, size_t idx, int& garbage_count) {
     bool ignore_next_char = false;
     bool in_garbage = false;
     while(idx < input.size()) {
@@ -65,6 +65,7 @@ int build_tree(node* parent, const std::string& input, size_t idx) {
         // Handle exit of garbage section
         if(in_garbage) {
             if(c != '>') {
+                garbage_count += 1;
                 idx++;
                 continue;
             } else {
@@ -84,7 +85,7 @@ int build_tree(node* parent, const std::string& input, size_t idx) {
             node* new_child = new node;
             parent->children.push_back(new_child);
             idx++;
-            idx = build_tree(new_child, input, idx);
+            idx = build_tree(new_child, input, idx, garbage_count);
             continue;
         }
         // Handle closing of the current group
@@ -140,10 +141,12 @@ int main(int argc, char** argv) {
     idx += 1;
 
     // Build up the tree
-    build_tree(root, input_string, idx);
+    int garbage_count = 0;
+    build_tree(root, input_string, idx, garbage_count);
 
     // Compute tree score
     std::cout << "Task 1: the total tree score is: " << tree_score(root) << std::endl;
+    std::cout << "Task 2: the number of non-cancelled garbage characters is: " << garbage_count << std::endl;
 
     // Clean everything up
     destroy_tree(root);
