@@ -40,6 +40,43 @@ class point {
         point operator*(type n) const {
             return point(x*n,y*n);
         }
+        type dist(const point& p) const {
+            float dx = this->x - p.x;
+            float dy = this->y - p.y;
+            type n1 = 0;
+            type n2 = 0;
+            type min_dist = std::numeric_limits<type>::max();
+            auto is_integral = [](float f) {
+                float integral = 0;
+                float fractional = std::modf(f, &integral);
+                if(fractional == 0.) {
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+            auto check_and_update = [&](float n1p, float n2p) {
+                // Check if they're fractional
+                if(is_integral(n1p)&&is_integral(n2p)) {
+                    type td = std::abs(n1p)+std::abs(n2p);
+                    if(td < min_dist) {
+                        min_dist = td;
+                        n1 = (type)n1p;
+                        n2 = (type)n2p;
+                    }
+                }
+            };
+            float n11 = dx;
+            float n12 = -dx/2+dy/2;
+            check_and_update(n11, n12);
+            float n21 = dx;
+            float n22 = dx/2+dy/2;
+            check_and_update(n21, n22);
+            float n31 = dx/2+dy/2;
+            float n32 = dx/2-dy/2;
+            check_and_update(n31, n32);
+            return min_dist;
+        }
         type x;
         type y;
         friend std::ostream& operator<<(std::ostream& out, const point& p);
@@ -86,17 +123,26 @@ int main(int argc, char** argv) {
     }
 
     point current(0,0);
+    point origin(0,0);
+    type max_dist = 0;
 
     std::regex dir_match("([nesw]+)");
     auto line_beg = std::sregex_iterator(line.begin(), line.end(), dir_match);
     auto line_end = std::sregex_iterator();
     for(std::sregex_iterator i = line_beg; i != line_end; ++i) {
         current = current+dirs[i->str()];
+        type d = current.dist(origin);
+        if(d > max_dist) {
+            max_dist = d;
+        }
     }
 
     if(verbose) {
         std::cout << "We wind up at: " << current << std::endl;
     }
+
+    std::cout << "Task 1: Distance to the origin: " << current.dist(point(0,0)) << std::endl;
+    std::cout << "Task 2: Max distance from origin: " << max_dist << std::endl;
 
 	return 0;
 }
