@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <set>
@@ -13,10 +14,9 @@
 
 typedef unsigned char type;
 
-void hash_round(std::vector<type>& list, const std::vector<type>& lengths, size_t& skip, size_t size) {
+void hash_round(std::vector<type>& list, const std::vector<type>& lengths, size_t& current_pos, size_t& skip, size_t size) {
     // Perform 
     size_t it = 0;
-    size_t current_pos = 0;
     while(it < lengths.size()) {
         size_t len = lengths[it];
         // Swap elements until we get into the middle.
@@ -38,9 +38,11 @@ void hash_round(std::vector<type>& list, const std::vector<type>& lengths, size_
 
 std::string knot_hash(std::vector<type>& list, const std::vector<type>& input_lengths, size_t size) {
     size_t skip = 0;
+    size_t current_pos = 0;
     size_t n_it = 0;
     while(n_it < 64) {
-        hash_round(list, input_lengths, skip, size);
+        hash_round(list, input_lengths, current_pos, skip, size);
+        n_it += 1;
     }
     std::vector<type> dense_hash;
     for(size_t i = 0; i < 16; ++i) {
@@ -49,10 +51,10 @@ std::string knot_hash(std::vector<type>& list, const std::vector<type>& input_le
             val = val^list[i*16+j];
         }
         dense_hash.push_back(val);
-    }
-    std::stringstream ss;
+    } std::stringstream ss;
+    ss << std::hex << std::setfill('0');
     for(type& v: dense_hash) {
-        ss << std::hex << v;
+        ss << std::setw(2) << static_cast<unsigned>(v);
     }
     return ss.str();
 }
@@ -64,11 +66,13 @@ int main(int argc, char** argv) {
     size_t size = 256;
     std::string test_string;
     bool test_string_given = false;
+    bool empty_test = false;
 	ArgParse::ArgParser Parser("Day 10");
 	Parser.AddArgument("-i/--input", "File defining the input", &input_filepath);
 	Parser.AddArgument("-v/--verbose", "Print Verbose output", &verbose);
     Parser.AddArgument("-s/--size", "Size of the list of numbers", &size);
     Parser.AddArgument("-str/--test-string", "string to test for full hash", &test_string, ArgParse::Argument::Optional, &test_string_given);
+    Parser.AddArgument("-et", "Do the empty test", &empty_test);
 
 	if (Parser.ParseArgs(argc, argv) < 0) {
 		std::cerr << "Problem parsing arguments!" << std::endl;
@@ -89,26 +93,50 @@ int main(int argc, char** argv) {
     }
 
     std::vector<type> lengths;
+    std::vector<type> input_lengths;
+
+    if(empty_test) {
+        input_lengths.push_back(17);
+        input_lengths.push_back(31);
+        input_lengths.push_back(73);
+        input_lengths.push_back(47);
+        input_lengths.push_back(23);
+
+        std::string hash = knot_hash(list, input_lengths, size);
+        std::cout << "empty string test: " << hash << std::endl;
+        return 0;
+    }
+
+    if(test_string_given) {
+        for(size_t i = 0; i < test_string.size(); ++i) {
+            input_lengths.push_back(test_string[i]);
+        }
+        input_lengths.push_back(17);
+        input_lengths.push_back(31);
+        input_lengths.push_back(73);
+        input_lengths.push_back(47);
+        input_lengths.push_back(23);
+
+        if(verbose) {
+            std::cout << "chars received" << std::endl;
+            for(size_t i = 0; i < input_lengths.size(); ++i) {
+                std::cout << ((int)input_lengths[i]) << std::endl;
+            }
+        }
+
+        std::string hash = knot_hash(list, input_lengths, size);
+        std::cout << "Test result: " << hash << std::endl;
+        return 0;
+    }
 
     std::string line;
     if(!std::getline(infile, line)) {
         std::cerr << "Problem with the input file" << std::endl;
         return -1;
     }
-    std::vector<type> input_lengths;
-    if(test_string_given) {
-        for(size_t i = 0; i < line.size(); ++i) {
-            input_lengths.push_back(test_string[i]);
-        }
-        lengths.push_back(17);
-        lengths.push_back(31);
-        lengths.push_back(73);
-        lengths.push_back(47);
-        lengths.push_back(23);
-    } else {
-        for(size_t i = 0; i < line.size(); ++i) {
-            input_lengths.push_back(line[i]);
-        }
+
+    for(size_t i = 0; i < line.size(); ++i) {
+        input_lengths.push_back(line[i]);
     }
 
     std::regex numbers_regex("[0-9]+");
@@ -139,25 +167,26 @@ int main(int argc, char** argv) {
     std::vector<type> list_copy = list;
     
     size_t skip = 0;
-    hash_round(list_copy, lengths, skip, size);
+    size_t current_pos = 0;
+    hash_round(list_copy, lengths, current_pos, skip, size);
 
     std::cout << "Task 1: product: " << ((size_t)list_copy[0])*((size_t)list_copy[1]) << std::endl;
 
     // Add the special numbers to the lengths
-    lengths.push_back(17);
-    lengths.push_back(31);
-    lengths.push_back(73);
-    lengths.push_back(47);
-    lengths.push_back(23);
+    input_lengths.push_back(17);
+    input_lengths.push_back(31);
+    input_lengths.push_back(73);
+    input_lengths.push_back(47);
+    input_lengths.push_back(23);
 
     if(verbose) {
         std::cout << "Part 2 input lengths: " << std::endl;
-        for(auto& v: lengths) {
+        for(auto& v: input_lengths) {
             std::cout << ((int) v) << std::endl;
         }
     }
 
-    std::string hash = knot_hash(list, lengths, size);
+    std::string hash = knot_hash(list, input_lengths, size);
 
     std::cout << "Task 2: hash: " << hash << std::endl;
 
