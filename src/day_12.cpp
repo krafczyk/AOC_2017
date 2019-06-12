@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
 	std::ifstream infile(input_filepath);
 
     std::unordered_map<type,node*> node_map;
+    std::vector<type> node_ids;
 
     std::string line;
     std::regex num_match("([0-9]+)");
@@ -52,6 +53,7 @@ int main(int argc, char** argv) {
             ids.push_back(fetch_value<type>(regit->str()));
         }
         node_map[ids[0]] = new node;
+        node_ids.push_back(ids[0]);
         for(size_t idx = 1; idx < ids.size(); ++idx) {
             node_map[ids[0]]->links.push_back(ids[idx]);
         }
@@ -59,28 +61,58 @@ int main(int argc, char** argv) {
 
     std::vector<type> edge_elements;
     std::vector<type> visited_elements;
+    std::vector<std::vector<type>> groups;
 
-    // Seed with ID 0
-    edge_elements.push_back(0);
+    auto total_visited = [&groups]() {
+        size_t total = 0;
+        for(const auto& group: groups) {
+            total += group.size();
+        }
+        return total;
+    };
 
-    while(edge_elements.size() != 0) {
-        // get the latest edge element to explore
-        type current = edge_elements.back();
-        edge_elements.pop_back();
-        // Add current to the visited elements
-        visited_elements.push_back(current);
-        // Add links to edge_elements if not in
-        // either of those groups
-        for(type id: node_map[current]->links) {
-            if((!hasElement(edge_elements,id))&&(!hasElement(visited_elements,id))) {
-                edge_elements.push_back(id);
+    while(total_visited() < node_map.size()) {
+        // Start with a seed element 
+        type initial_id = node_ids.back();
+        node_ids.pop_back();
+        edge_elements.push_back(initial_id);
+
+        while(edge_elements.size() != 0) {
+            // get the latest edge element to explore
+            type current = edge_elements.back();
+            edge_elements.pop_back();
+            // Add current to the visited elements
+            visited_elements.push_back(current);
+            // Add links to edge_elements if not in
+            // either of those groups
+            for(type id: node_map[current]->links) {
+                if((!hasElement(edge_elements,id))&&(!hasElement(visited_elements,id))) {
+                    edge_elements.push_back(id);
+                    // Remove from the overall node id list.
+                    node_ids.erase(std::find(node_ids.begin(), node_ids.end(), id));
+                }
             }
         }
+
+        // Add the new group
+        groups.push_back(visited_elements);
+        // Clear the old variables.
+        visited_elements.clear();
     }
 
+    auto zero_group_it = std::find_if(groups.cbegin(), groups.cend(), [](const std::vector<type>& group) {
+        if(hasElement(group,0)) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+
     std::cout << "Task 1: There are ";
-    std::cout << visited_elements.size();
+    std::cout << zero_group_it->size();
     std::cout << " which can communicate with ID 0." << std::endl;
+
+    std::cout << "Task 2: There are " << groups.size() << " total groups." << std::endl;
 
 	return 0;
 }
