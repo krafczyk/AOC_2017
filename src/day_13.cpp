@@ -22,36 +22,32 @@ class sec_layer {
 
 typedef int type;
 
-type severity(type t_dep, type max, const std::unordered_map<type,type>& sec_layers) {
-    type answer = 0;
-	type s_position = t_dep;
-	type p_pos = -1;
-    while(p_pos <= max) {
-		// Iterate packet position
-		p_pos += 1;
+bool severity(type t_dep, type max, const std::unordered_map<type,type>& sec_layers, type& sev) {
+    sev = 0;
+	bool detected = false;
+    for(type l = 0; l <= max; ++l) {
+		type t = l+t_dep;
 		// Test for detection by the security
         bool layer_exists = false;
         for(const auto& p: sec_layers) {
-            if(p.first == p_pos) {
+            if(p.first == l) {
                 layer_exists = true;
                 break;
             }
         }
         if(layer_exists) {
-            type range = sec_layers.at(p_pos);
-            type sec_position = s_position%(2*(range-1));
+            type range = sec_layers.at(l);
+            type sec_position = t%(2*(range-1));
             if(sec_position >= range) {
                 sec_position = (2*(range-1))-sec_position;
             }
-			std::cout << "p_pos: " << p_pos << " s_position: " << s_position << " sec_position: " << sec_position << std::endl;
             if(sec_position == 0) {
-                answer += p_pos*range;
+                sev += l*range;
+				detected = true;
             }
         }
-		// Iterate security position
-		s_position += 1;
     }
-    return answer;
+    return detected;
 }
 
 int main(int argc, char** argv) {
@@ -93,20 +89,17 @@ int main(int argc, char** argv) {
         sec_layers[layer] = depth;
     }
 
-    //type sev = severity(0, max, sec_layers);
+    type sev;
+	severity(0, max, sec_layers, sev);
 
-    //std::cout << "Task 1: The severity of leaving at t=0: " << sev << std::endl;
+    std::cout << "Task 1: The severity of leaving at t=0: " << sev << std::endl;
 
-	//type delay = 0;
-	//std::cout << "delay " << delay << std::endl;
-	//while(severity(delay, max, sec_layers) != 0) {
-	//	delay += 1;
-	//	std::cout << "delay " << delay << std::endl;
-	//}
+	type delay = 0;
+	while(severity(delay, max, sec_layers, sev) != 0) {
+		delay += 1;
+	}
 
-	std::cout << severity(10, max, sec_layers) << std::endl;
-	//std::cout << severity(4, max, sec_layers) << std::endl;
-	//std::cout << "Smallest delay to not be caught: " << delay << std::endl;
+	std::cout << "Task 2: Smallest delay to not be caught: " << delay << std::endl;
 
 	return 0;
 }
