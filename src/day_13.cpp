@@ -43,6 +43,7 @@ type severity(type t_dep, type max, const std::unordered_map<type,type>& sec_lay
             if(sec_position >= range) {
                 sec_position = (2*(range-1))-sec_position;
             }
+			std::cout << "p_pos: " << p_pos << " s_position: " << s_position << " sec_position: " << sec_position << std::endl;
             if(sec_position == 0) {
                 answer += p_pos*range;
             }
@@ -92,9 +93,20 @@ int main(int argc, char** argv) {
         sec_layers[layer] = depth;
     }
 
-    type sev = severity(0, max, sec_layers);
+    //type sev = severity(0, max, sec_layers);
 
-    std::cout << "Task 1: The severity of leaving at t=0: " << sev << std::endl;
+    //std::cout << "Task 1: The severity of leaving at t=0: " << sev << std::endl;
+
+	//type delay = 0;
+	//std::cout << "delay " << delay << std::endl;
+	//while(severity(delay, max, sec_layers) != 0) {
+	//	delay += 1;
+	//	std::cout << "delay " << delay << std::endl;
+	//}
+
+	std::cout << severity(10, max, sec_layers) << std::endl;
+	//std::cout << severity(4, max, sec_layers) << std::endl;
+	//std::cout << "Smallest delay to not be caught: " << delay << std::endl;
 
 	return 0;
 }
