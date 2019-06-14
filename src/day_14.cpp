@@ -137,7 +137,11 @@ int main(int argc, char** argv) {
         }
     }
 
+    typedef std::pair<int,int> point;
+
     size_t used_squares = 0;
+    bool map[128][128];
+    std::vector<point> positions;
     for(size_t i = 0; i < 128; ++i) {
         std::stringstream ss;
         ss << input_key << "-" << i;
@@ -146,11 +150,53 @@ int main(int argc, char** argv) {
         for(size_t j = 0; j < 128; ++j) {
             if(binary_row[j] == '1') {
                 used_squares += 1;
+                map[i][j] = true;
+                positions.push_back(std::pair<int,int>(i,j));
+            } else {
+                map[i][j] = false;
             }
         }
     }
 
+    point dirs[4] = {
+        {1,0},
+        {0,1},
+        {-1,0},
+        {0,-1}
+    };
+
+    size_t num_regions = 0;
+    while(positions.size() != 0) {
+        std::vector<point> edge_points;
+        edge_points.push_back(positions.back());
+        positions.pop_back();
+        while(edge_points.size() != 0) {
+            point p = edge_points.back();
+            edge_points.pop_back();
+            for(size_t d = 0; d < 4; ++d) {
+                point np = point(p.first+dirs[d].first,p.second+dirs[d].second);
+                // Skip points beyond boundaries
+                if((np.first < 0)||(np.first >= 128)||
+                   (np.second < 0)||(np.second >= 128)) {
+                    continue;
+                }
+                // skip non used points
+                if(!map[np.first][np.second]) {
+                    continue;
+                }
+                // Skip points not in positions and not already in the edge points
+                if((!hasElement(positions, np))||hasElement(edge_points, np)) {
+                    continue;
+                }
+                edge_points.push_back(np);
+                positions.erase(std::find(positions.begin(), positions.end(), np));
+            }
+        }
+        num_regions += 1;
+    }
+
     std::cout << "Task 1: There were " << used_squares << " used squares." << std::endl;
+    std::cout << "Task 2: There were " << num_regions << " regions." << std::endl;
 
 	return 0;
 }
