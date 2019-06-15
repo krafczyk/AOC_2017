@@ -65,8 +65,8 @@ int main(int argc, char** argv) {
     }
 
     size_t num_matches = 0;
-    int64_t& gen_a = initial_values["A"];
-    int64_t& gen_b = initial_values["B"];
+    int64_t gen_a = initial_values["A"];
+    int64_t gen_b = initial_values["B"];
     int64_t fac_a = 16807;
     int64_t fac_b = 48271;
     for(size_t i = 0; i < 40000000; ++i) {
@@ -79,7 +79,27 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::cout << "The judge found " << num_matches << " of matches" << std::endl;
+    std::cout << "Task 1: The judge found " << num_matches << " of matches" << std::endl;
+
+    num_matches = 0;
+    gen_a = initial_values["A"];
+    gen_b = initial_values["B"];
+    for(size_t i = 0; i < 5000000; ++i) {
+        // Generate next values
+        do {
+            gen(gen_a, fac_a);
+        } while(gen_a%4 != 0);
+        do {
+            gen(gen_b, fac_b);
+        } while(gen_b%8 != 0);
+        // Judge them
+        if(gen_a%(65536)==gen_b%(65536)) {
+            num_matches += 1;
+        }
+    }
+
+    std::cout << "Task 2: The judge found " << num_matches << " of matches" << std::endl;
+
 
 	return 0;
 }
