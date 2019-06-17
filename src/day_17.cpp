@@ -23,6 +23,17 @@ void report(const std::vector<size_t>& buffer, size_t i) {
     std::cout << std::endl;
 }
 
+void Report(const std::vector<size_t>& buffer, size_t i, size_t l) {
+    for(size_t idx = i-l; idx <= i+l; ++idx) {
+        if(idx == i) {
+            std::cout << "(" << buffer[idx] << ")";
+        } else {
+            std::cout << " " << buffer[idx] << " ";
+        }
+    }
+    std::cout << std::endl;
+}
+
 int main(int argc, char** argv) {
 	// Parse Arguments
 	std::string input_filepath;
@@ -54,9 +65,9 @@ int main(int argc, char** argv) {
                 break;
             }
         }
-        if(verbose) {
-            report(buffer, i);
-        }
+        //if(verbose) {
+        //    report(buffer, i);
+        //}
         // Advance to the new position
         i = (i+jump_val)%buffer.size();
         buffer.insert(buffer.begin()+i+1,n);
@@ -64,8 +75,12 @@ int main(int argc, char** argv) {
         n += 1;
     }
 
+    //if(verbose) {
+    //    report(buffer, i);
+    //}
+
     if(verbose) {
-        report(buffer, i);
+        Report(buffer, i, 3);
     }
 
     std::cout << "Task 1: value following 2017: " << buffer[i+1] << std::endl;
