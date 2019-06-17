@@ -65,9 +65,6 @@ int main(int argc, char** argv) {
                 break;
             }
         }
-        //if(verbose) {
-        //    report(buffer, i);
-        //}
         // Advance to the new position
         i = (i+jump_val)%buffer.size();
         buffer.insert(buffer.begin()+i+1,n);
@@ -75,15 +72,24 @@ int main(int argc, char** argv) {
         n += 1;
     }
 
-    //if(verbose) {
-    //    report(buffer, i);
-    //}
-
     if(verbose) {
         Report(buffer, i, 3);
     }
-
     std::cout << "Task 1: value following 2017: " << buffer[i+1] << std::endl;
+
+    size_t v = 0;
+    size_t s = buffer.size();
+    while(n <= 50000000) {
+        i = (i+jump_val)%s;
+        if(i == 0) {
+            v = n;
+        }
+        i += 1;
+        s += 1;
+        n += 1;
+    }
+
+    std::cout << "Task 2: " << v << std::endl;
 
 	return 0;
 }
