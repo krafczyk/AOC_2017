@@ -5,6 +5,8 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <sstream>
+#include <cstdio>
 
 typedef long type_t;
 
@@ -75,6 +77,9 @@ auto program = [](type_t this_prog) {
                 // Get the value
                 v = msg_queues[this_prog].front();
                 msg_queues[this_prog].pop();
+                std::stringstream ss;
+                ss << "program " << this_prog << " receives the value " << v;
+                printf("%s\n", ss.str().c_str());
                 // Free the lock
                 msg_mutexes[this_prog].unlock();
                 break;
@@ -92,6 +97,9 @@ auto program = [](type_t this_prog) {
     auto send_value = [&](type_t v) {
         // Try to get a lock.
         msg_mutexes[other_prog].lock();
+        std::stringstream ss;
+        ss << "program " << this_prog << " sends the value " << v;
+        printf("%s\n", ss.str().c_str());
         msg_queues[other_prog].push(v);
         msg_mutexes[other_prog].unlock();
         if(this_prog == 1) {
