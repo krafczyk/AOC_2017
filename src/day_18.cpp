@@ -12,10 +12,12 @@
 #include "ArgParseStandalone.h"
 #include "utilities.h"
 
-typedef int type_t;
+typedef long type_t;
 typedef std::unordered_map<std::string,type_t> registers;
 
 std::vector<type_t> sounds_played;
+bool rcv_called = false;
+bool first_rcv = true;
 type_t ip = 0;
 
 class instruction {
@@ -93,6 +95,7 @@ class rcvv: public inst_1v {
         rcvv(type_t v): inst_1v(v) {}
         void operator()(registers& r [[maybe_unused]]) {
             if(v != 0) {
+                rcv_called = true;
                 sounds_played.push_back(sounds_played.back());
             }
         }
@@ -103,6 +106,7 @@ class rcvr: public inst_1r {
         rcvr(const std::string reg): inst_1r(reg) {}
         void operator()(registers& r [[maybe_unused]]) {
             if(r[reg] != 0) {
+                rcv_called = true;
                 sounds_played.push_back(sounds_played.back());
             }
         }
@@ -273,7 +277,9 @@ int main(int argc, char** argv) {
 	// Open input as stream
 	std::ifstream infile(input_filepath);
 
-    std::regex inst_match("([a-z]+) ([a-z\\-0-9]+)(?: ([a-z\\-0-9]+))");
+    std::vector<instruction*> program;
+    registers rs;
+    std::regex inst_match("([a-z]+) ([a-z\\-0-9]+)(?: ([a-z\\-0-9]+))?");
     std::string line;
     while(std::getline(infile, line)) {
         std::smatch match;
@@ -281,11 +287,31 @@ int main(int argc, char** argv) {
             std::cerr << "There was an error reading in the instruction" << std::endl;
             return -1;
         }
-        if(verbose) {
-            for(size_t i = 1; i < match.size(); ++i) {
+        std::vector<std::string> instruction_pieces;
+        for(size_t i = 1; i < match.size(); ++i) {
+            instruction_pieces.push_back(match[i].str());
+            if(verbose) {
                 std::cout << match[i] << " ";
             }
+        }
+        if(verbose) {
             std::cout << std::endl;
+        }
+        program.push_back(InstructionFactory(instruction_pieces));
+    }
+
+    size_t num = 0;
+    while((ip >= 0) && (ip < (type_t)program.size())) {
+        // Execute instruction
+        (*program[ip])(rs);
+        // Advance instruction pointer
+        ip += 1;
+        // Count instruction
+        num += 1;
+        if(rcv_called&&first_rcv) {
+            std::cout << "Task 1: The first recovered frequency is: " << sounds_played.back() << std::endl;
+            first_rcv = false;
+            break;
         }
     }
 
