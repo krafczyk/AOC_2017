@@ -375,7 +375,13 @@ int main(int argc, char** argv) {
             } else {
                 // Indicate we're not waiting, change programs.
                 waiting_for_values[current_program] = true;
+                if(verbose) {
+                    std::cout << "Switching from " << current_program;
+                }
                 current_program = (current_program+1)%2;
+                if(verbose) {
+                    std:: cout << " to " << current_program << std::endl;
+                }
                 idle_program = (idle_program+1)%2;
             }
         }
