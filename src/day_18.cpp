@@ -353,6 +353,20 @@ int main(int argc, char** argv) {
     int idle_program = (current_program+1)%2;
     size_t num_vals_sent = 0;
     while(true) {
+        bool current_valid = ((regs[current_program][ip] >= 0)||(regs[current_program][ip] < (type_t)program.size()));
+        bool idle_valid = ((regs[idle_program][ip] >= 0)||(regs[idle_program][ip] < (type_t)program.size()));
+        if((!current_valid)&&(!idle_valid)) {
+            // Both programs have terminated
+            break;
+        }
+        if(!current_valid) {
+            // Switch context, also indicate this program is waiting for a value. It will add no more values.
+            waiting_for_values[current_program] = true;
+            // Switch context.
+            current_program = (current_program+1)%2;
+            idle_program = (idle_program+1)%2;
+            continue;
+        }
         // Execute instruction
         size_t before_size = message[idle_program].size();
         if((*program[regs[current_program][ip]])(regs[current_program], message[idle_program], message[current_program])) {
