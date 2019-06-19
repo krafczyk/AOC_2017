@@ -25,13 +25,12 @@ std::mutex msg_mutexes[2];
 std::atomic<bool> waiting[2];
 
 auto send_value = [](int this_prog, int other_prog, type_t v) {
-    // Try to get a lock.
-    msg_mutexes[other_prog].lock();
-    std::stringstream ss;
-    ss << "program " << this_prog << " sends the value " << v;
-    printf("%s\n", ss.str().c_str());
+    // Get the lock.
+    std::lock_guard<std::mutex> lk(msg_mutexes[other_prog]);
+    //std::stringstream ss;
+    //ss << "program " << this_prog << " sends the value " << v;
+    //printf("%s\n", ss.str().c_str());
     msg_queues[other_prog].push(v);
-    msg_mutexes[other_prog].unlock();
     if(this_prog == 1) {
         num_vals_sent += 1;
     }
@@ -40,47 +39,61 @@ auto send_value = [](int this_prog, int other_prog, type_t v) {
 auto fetch_queue_value = [](int this_prog, int other_prog, type_t& v) {
     // Acquire the lock, or wait until the queue is full
     // as long as the other thread isn't waiting.
+    std::chrono::time_point<std::chrono::system_clock> last_val;
+    bool deadlock_test = false;
     while(true) {
-        // We first need to acquire the lock.
-        while(!msg_mutexes[this_prog].try_lock()) {
-            // We failed to get the lock,
-            // the other thread must be working.
-            // Check that it isn't stalled.
-            if(waiting[other_prog].load()) {
-                // The other program is waiting, which means it must be done with our lock.
-                if(!msg_mutexes[this_prog].try_lock()) {
-                    std::cerr << "We should've been able to get the lock this time! program " << this_prog << std::endl;
-                    throw;
+        {
+            std::lock_guard<std::mutex> lk(msg_mutexes[this_prog]);
+            if(msg_queues[this_prog].size() > 0) {
+                // We can get a value!
+                // Indicate we are no longer waiting.
+                waiting[this_prog].store(false);
+                // Get the value
+                v = msg_queues[this_prog].front();
+                msg_queues[this_prog].pop();
+                //std::stringstream ss;
+                //ss << "program " << this_prog << " receives the value " << v;
+                //printf("%s\n", ss.str().c_str());
+                if(deadlock_test) {
+                    std::stringstream ss;
+                    ss << "program " << this_prog << " got a value while testing for a deadlock";
+                    printf("%s\n", ss.str().c_str());
                 }
-                // Check if our queue is empty.
-                if(msg_queues[this_prog].size() == 0) {
-                    // The other thread is stalled AND we have no messages, DEADLOCK
-                    // Indicate we're waiting
-                    waiting[this_prog].store(true);
-                    return false;
+                break;
+            }
+            // Release the lock.
+        }
+        // There are no messages
+        if(waiting[this_prog].load()) {
+            // We were already waiting for a new message
+            if(waiting[other_prog].load()) {
+                // They're waiting too, test for deadlock
+                auto current_val = std::chrono::system_clock::now();
+                if(!deadlock_test) {
+                    // Start deadlock test
+                    std::stringstream ss;
+                    ss << "program " << this_prog << " is now testing for deadlock";
+                    printf("%s\n", ss.str().c_str());
+                    last_val = current_val;
+                    deadlock_test = true;
+                } else {
+                    if(current_val-last_val > std::chrono::seconds(1)) {
+                        // Deadlock detected
+                        return false;
+                    }
+                }
+            } else {
+                // They stopped waiting, signal end to deadlock test.
+                if(deadlock_test) {
+                    deadlock_test = false;
+                    std::stringstream ss;
+                    ss << "program " << this_prog << " ended deadlock test since other thread continued.";
+                    printf("%s\n", ss.str().c_str());
                 }
             }
-        }
-        // We got the lock
-        if(msg_queues[this_prog].size() > 0) {
-            // We can get a value!
-            // Indicate we are no longer waiting.
-            waiting[this_prog].store(false);
-            // Get the value
-            v = msg_queues[this_prog].front();
-            msg_queues[this_prog].pop();
-            std::stringstream ss;
-            ss << "program " << this_prog << " receives the value " << v;
-            printf("%s\n", ss.str().c_str());
-            // Free the lock
-            msg_mutexes[this_prog].unlock();
-            break;
         } else {
-            // There are no messages
-            // Indicate we need to wait.
+            // Indicate we are waiting now
             waiting[this_prog].store(true);
-            // Free the lock.
-            msg_mutexes[this_prog].unlock();
         }
     }
     return true;
@@ -179,7 +192,7 @@ int main() {
     prog0.join();
     prog1.join();
 
-    std::cout << "Task 2: Program 1 sent" << num_vals_sent << " messages" << std::endl;
+    std::cout << "Task 2: Program 1 sent " << num_vals_sent << " messages" << std::endl;
 
     return 0;
 }
