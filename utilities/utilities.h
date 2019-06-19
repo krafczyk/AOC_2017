@@ -113,6 +113,12 @@ class array_2d {
                 out << std::endl;
             }
         }
+        size_t width() const {
+            return this->nx;
+        }
+        size_t height() const {
+            return this->ny;
+        }
     private:
         size_t nx;
         size_t ny;
