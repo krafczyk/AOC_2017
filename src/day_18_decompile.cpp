@@ -33,6 +33,9 @@ auto send_value = [](int this_prog, int other_prog, type_t v) {
     msg_queues[other_prog].push(v);
     if(this_prog == 1) {
         num_vals_sent += 1;
+        if(num_vals_sent%1000000 == 0) {
+            printf("Program 1 Sent %lu messages\n", num_vals_sent);
+        }
     }
 };
 
@@ -54,11 +57,11 @@ auto fetch_queue_value = [](int this_prog, int other_prog, type_t& v) {
                 //std::stringstream ss;
                 //ss << "program " << this_prog << " receives the value " << v;
                 //printf("%s\n", ss.str().c_str());
-                if(deadlock_test) {
-                    std::stringstream ss;
-                    ss << "program " << this_prog << " got a value while testing for a deadlock";
-                    printf("%s\n", ss.str().c_str());
-                }
+                //if(deadlock_test) {
+                //    std::stringstream ss;
+                //    ss << "program " << this_prog << " got a value while testing for a deadlock";
+                //    printf("%s\n", ss.str().c_str());
+                //}
                 break;
             }
             // Release the lock.
@@ -71,9 +74,9 @@ auto fetch_queue_value = [](int this_prog, int other_prog, type_t& v) {
                 auto current_val = std::chrono::system_clock::now();
                 if(!deadlock_test) {
                     // Start deadlock test
-                    std::stringstream ss;
-                    ss << "program " << this_prog << " is now testing for deadlock";
-                    printf("%s\n", ss.str().c_str());
+                    //std::stringstream ss;
+                    //ss << "program " << this_prog << " is now testing for deadlock";
+                    //printf("%s\n", ss.str().c_str());
                     last_val = current_val;
                     deadlock_test = true;
                 } else {
@@ -86,9 +89,9 @@ auto fetch_queue_value = [](int this_prog, int other_prog, type_t& v) {
                 // They stopped waiting, signal end to deadlock test.
                 if(deadlock_test) {
                     deadlock_test = false;
-                    std::stringstream ss;
-                    ss << "program " << this_prog << " ended deadlock test since other thread continued.";
-                    printf("%s\n", ss.str().c_str());
+                    //std::stringstream ss;
+                    //ss << "program " << this_prog << " ended deadlock test since other thread continued.";
+                    //printf("%s\n", ss.str().c_str());
                 }
             }
         } else {
@@ -99,7 +102,7 @@ auto fetch_queue_value = [](int this_prog, int other_prog, type_t& v) {
     return true;
 };
 
-auto program = [](type_t this_prog) {
+auto program_final = [](type_t this_prog) {
     type_t other_prog = (this_prog+1)%2;
     // We're program 0, generate the new values
     if(this_prog == 0) {
@@ -166,6 +169,7 @@ auto program = [](type_t this_prog) {
         send_value(this_prog, other_prog, a);
         // 39 jgz f -16 
     } while (f != 0);
+    std::cout << "Escaped main loop!" << std::endl;
     if(a != 0) {
         do {
             // 21 rcv b
@@ -180,13 +184,36 @@ auto program = [](type_t this_prog) {
     return;
 };
 
+auto program_test = [](type_t this_prog) {
+    type_t other_prog = (this_prog+1)%2;
+    send_value(this_prog, other_prog, 1);
+    send_value(this_prog, other_prog, 2);
+    send_value(this_prog, other_prog, this_prog);
+    type_t a = 0;
+    if(!fetch_queue_value(this_prog, other_prog, a)) {
+        return;
+    }
+    type_t b = 0;
+    if(!fetch_queue_value(this_prog, other_prog, b)) {
+        return;
+    }
+    type_t c = 0;
+    if(!fetch_queue_value(this_prog, other_prog, c)) {
+        return;
+    }
+    type_t d = 0;
+    if(!fetch_queue_value(this_prog, other_prog, d)) {
+        return;
+    }
+};
+
 int main() {
     waiting[0].store(false);
     waiting[1].store(false);
 
     // Launch the threads
-    std::thread prog0(program, 0);
-    std::thread prog1(program, 1);
+    std::thread prog0(program_final, 0);
+    std::thread prog1(program_final, 1);
 
     // Join the threads
     prog0.join();
