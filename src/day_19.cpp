@@ -62,9 +62,10 @@ std::ostream& operator<<(std::ostream& out, const point& rhs) {
 
 point dirs[2] = { {0,1}, {1,0} };
 
-std::string navigate_map(array_2d<char>& map, bool verbose = false) {
+std::pair<std::string,int> navigate_map(array_2d<char>& map, bool verbose = false) {
 	// Initialize answer
 	std::string answer;
+	int steps = 0;
 	// Find start location
 	size_t initial_x = 0;
 	for(;initial_x < map.width(); ++initial_x) {
@@ -133,6 +134,7 @@ std::string navigate_map(array_2d<char>& map, bool verbose = false) {
 				break;
 			}
 		}
+		steps += 1;
 		if((map(current_position.x, current_position.y) >= 'A')&&(map(current_position.x, current_position.y) <= 'Z')) {
 			if(verbose) {
 				std::cout << "Encountered letter " << map(current_position.x, current_position.y) << std::endl;
@@ -141,7 +143,7 @@ std::string navigate_map(array_2d<char>& map, bool verbose = false) {
 		}
 	};
 
-	return answer;
+	return std::pair<std::string,int>(answer,steps);
 }
 
 int main(int argc, char** argv) {
@@ -185,8 +187,9 @@ int main(int argc, char** argv) {
 		std::cout << "Got map with dimensions: " << map.width() << "," << map.height() << std::endl;
 	}
 
-	std::string map_string = navigate_map(map, verbose);
-	std::cout << "Task 1: " << map_string << std::endl;
+	auto map_answer = navigate_map(map, verbose);
+	std::cout << "Task 1: " << map_answer.first << std::endl;
+	std::cout << "Task 2: " << map_answer.second+1 << std::endl;
 
 	return 0;
 }
