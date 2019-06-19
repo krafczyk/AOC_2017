@@ -153,12 +153,13 @@ auto program_final = [](type_t this_prog) {
             p += b;
             if(p == 0) {
                 // 31 snd a
-                send_value(this_prog, other_prog, a);
                 // 32 set a b
+                send_value(this_prog, other_prog, a);
                 a = b;
             } else {
-                send_value(this_prog, other_prog, b);
+                // 34 snd b
                 // 35 set f 1
+                send_value(this_prog, other_prog, b);
                 f = 1;
             }
             // 36 add i -1
