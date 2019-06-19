@@ -33,7 +33,7 @@ auto send_value = [](int this_prog, int other_prog, type_t v) {
     msg_queues[other_prog].push(v);
     if(this_prog == 1) {
         num_vals_sent += 1;
-        if(num_vals_sent%1000000 == 0) {
+        if(num_vals_sent%10000000 == 0) {
             printf("Program 1 Sent %lu messages\n", num_vals_sent);
         }
     }
@@ -151,7 +151,7 @@ auto program_final = [](type_t this_prog) {
             p = a;
             p = -p;
             p += b;
-            if(p == 0) {
+            if(p <= 0) {
                 // 31 snd a
                 // 32 set a b
                 send_value(this_prog, other_prog, a);
@@ -170,7 +170,6 @@ auto program_final = [](type_t this_prog) {
         send_value(this_prog, other_prog, a);
         // 39 jgz f -16 
     } while (f != 0);
-    std::cout << "Escaped main loop!" << std::endl;
     if(a != 0) {
         do {
             // 21 rcv b
