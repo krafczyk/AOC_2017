@@ -201,6 +201,75 @@ class map_val {
         bool set;
 };
 
+template<class T>
+class point2d {
+    public:
+        point2d(T x=0, T y=0) {
+            this->x = x;
+            this->y = y;
+        }
+        point2d(const point2d& rhs) {
+            set_equal(rhs);
+        }
+        point2d& operator=(const point2d& rhs) {
+            set_equal(rhs);
+            return *this;
+        }
+        point2d operator+(const point2d& rhs) const {
+            return point2d(x+rhs.x,y+rhs.y);
+        }
+        point2d operator-(const point2d& rhs) const {
+            return point2d(x-rhs.x,y-rhs.y);
+        }
+        template<class U>
+        point2d operator*(U a) const {
+            return point2d(x*a,y*a);
+        }
+        T x;
+        T y;
+    private:
+        void set_equal(const point2d& rhs) {
+            this->x = rhs.x;
+            this->y = rhs.y;
+        }
+};
+
+template<class T>
+class point3d {
+    public:
+        point3d(T x=0, T y=0, T z=0) {
+            this->x = x;
+            this->y = y;
+            this->z = z;
+        }
+        point3d(const point3d& rhs) {
+            set_equal(rhs);
+        }
+        point3d& operator=(const point3d& rhs) {
+            set_equal(rhs);
+            return *this;
+        }
+        point3d operator+(const point3d& rhs) const {
+            return point3d(x+rhs.x,y+rhs.y,z+rhs.z);
+        }
+        point3d operator-(const point3d& rhs) const {
+            return point3d(x-rhs.x,y-rhs.y,z-rhs.z);
+        }
+        template<class U>
+        point3d operator*(U a) const {
+            return point3d(x*a,y*a,z*a);
+        }
+        T x;
+        T y;
+        T z;
+    private:
+        void set_equal(const point3d& rhs) {
+            this->x = rhs.x;
+            this->y = rhs.y;
+            this->z = rhs.z;
+        }
+};
+
 int pair_hash(int x, int y) {
     // Here we use something similar to cantor pairing.
     // https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
