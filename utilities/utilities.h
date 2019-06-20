@@ -222,6 +222,12 @@ class point2d {
         point2d operator-(const point2d& rhs) const {
             return point2d(x-rhs.x,y-rhs.y);
         }
+        bool operator==(const point2d& rhs) const {
+            return ((this->x==rhs.x)&&(this->y==rhs.y));
+        }
+        bool operator!=(const point2d& rhs) const {
+            return ((this->x!=rhs.x)||(this->y!=rhs.y));
+        }
         template<class U>
         point2d operator*(U a) const {
             return point2d(x*a,y*a);
@@ -256,6 +262,12 @@ class point3d {
         }
         point3d operator-(const point3d& rhs) const {
             return point3d(x-rhs.x,y-rhs.y,z-rhs.z);
+        }
+        bool operator==(const point3d& rhs) const {
+            return ((this->x==rhs.x)&&(this->y==rhs.y)&&(this->z==rhs.z));
+        }
+        bool operator!=(const point3d& rhs) const {
+            return ((this->x!=rhs.x)||(this->y!=rhs.y)||(this->z!=rhs.z));
         }
         template<class U>
         point3d operator*(U a) const {
