@@ -208,6 +208,7 @@ class point2d {
             this->x = x;
             this->y = y;
         }
+        virtual ~point2d() {}
         point2d(const point2d& rhs) {
             set_equal(rhs);
         }
@@ -242,6 +243,7 @@ class point3d {
             this->y = y;
             this->z = z;
         }
+        virtual ~point3d() {}
         point3d(const point3d& rhs) {
             set_equal(rhs);
         }
