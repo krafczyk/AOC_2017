@@ -237,6 +237,8 @@ int main(int argc, char** argv) {
     std::regex rule_pattern("^([.#/]+) => ([.#/]+)$");
     std::unordered_map<specific_grid<2>,specific_grid<3>,specific_grid_hasher<2>> map_2_dict;
     std::unordered_map<specific_grid<3>,specific_grid<4>,specific_grid_hasher<3>> map_3_dict;
+    int num_2 = 0;
+    int num_3 = 0;
     std::string line;
 	std::ifstream infile(input_filepath);
     while(std::getline(infile, line)) {
@@ -250,22 +252,45 @@ int main(int argc, char** argv) {
         std::cout << "Left rule: (" << left_rule << ") ";
         std::cout << "Right rule: (" << right_rule << ")" << std::endl;
         if(left_rule.size() == 5) {
+            num_2 += 1;
             specific_grid<2> left_grid(left_rule);
             specific_grid<3> answer_grid(right_rule);
             std::vector<specific_grid<2>> Left = all_unique(left_grid);
             for(specific_grid<2>& g: Left) {
+                // Check that this grid isn't already in the map
+                try {
+                    map_2_dict.at(g);
+                    std::cerr << "We should not have encountered this grid (2) before!" << std::endl;
+                    throw;
+                } catch (std::out_of_range& e) {
+                }
                 map_2_dict[g] = answer_grid;
             }
         } else if (left_rule.size() == 11) {
+            num_3 += 1;
             specific_grid<3> left_grid(left_rule);
             specific_grid<4> answer_grid(right_rule);
             std::vector<specific_grid<3>> Left = all_unique(left_grid);
             for(specific_grid<3>& g: Left) {
+                // Check that this grid isn't already in the map
+                try {
+                    map_3_dict.at(g);
+                    std::cerr << "We should not have encountered this grid (3) before!" << std::endl;
+                    throw;
+                } catch (std::out_of_range& e) {
+                }
                 map_3_dict[g] = answer_grid;
             }
         } else {
             std::cerr << "Got a starting rule which isn't correct!" << std::endl;
         }
+    }
+
+    if(verbose) {
+        std::cout << "We got " << num_2 << " separate rules size 2 rules" << std::endl;
+        std::cout << "Resulting in a total of " << map_2_dict.size() << " degenerate rules" << std::endl;
+        std::cout << "We got " << num_3 << " separate rules size 3 rules" << std::endl;
+        std::cout << "Resulting in a total of " << map_3_dict.size() << " degenerate rules" << std::endl;
     }
 
     // Initialize full grid position
