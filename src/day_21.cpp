@@ -249,8 +249,10 @@ int main(int argc, char** argv) {
         }
         std::string left_rule = rule_match[1].str();
         std::string right_rule = rule_match[2].str();
-        std::cout << "Left rule: (" << left_rule << ") ";
-        std::cout << "Right rule: (" << right_rule << ")" << std::endl;
+		if(verbose) {
+        	std::cout << "Left rule: (" << left_rule << ") ";
+        	std::cout << "Right rule: (" << right_rule << ")" << std::endl;
+		}
         if(left_rule.size() == 5) {
             num_2 += 1;
             specific_grid<2> left_grid(left_rule);
@@ -312,29 +314,7 @@ int main(int argc, char** argv) {
     }
 
     while(it < num_iterations) {
-        if(full_grid->height()%3 == 0) {
-            // We have a divisible by 3 component.
-            // Initialize a new map
-            int new_N = ((int)full_grid->height()/3)*4;
-            array_2d<bool>* new_grid = new array_2d<bool>(new_N,new_N);
-            for(int rti = 0; rti < ((int)full_grid->height())/3; ++rti) {
-                for(int cti = 0; cti < ((int)full_grid->width())/3; ++cti) {
-                    // Extract tile
-                    specific_grid<3> tile(*full_grid,rti*3,cti*3);
-                    // Find replacement
-                    specific_grid<4>& new_tile = map_3_dict[tile];
-                    // Set new grid values
-                    for(int row_i = 0; row_i < 4; ++row_i) {
-                        for(int col_i = 0; col_i < 4; ++col_i) {
-                            new_grid->assign(rti*4+row_i,cti*4+col_i) = new_tile(row_i,col_i);
-                        }
-                    }
-                }
-            }
-            // Swap arrays
-            delete full_grid;
-            full_grid = new_grid;
-        } else {
+        if(full_grid->height()%2==0) {
             // Use the other method.
             // Initialize a new map
             int new_N = ((int)full_grid->height()/2)*3;
@@ -356,7 +336,29 @@ int main(int argc, char** argv) {
             // Swap arrays
             delete full_grid;
             full_grid = new_grid;
-        }
+        } else {
+            // We have a divisible by 3 component.
+            // Initialize a new map
+            int new_N = ((int)full_grid->height()/3)*4;
+            array_2d<bool>* new_grid = new array_2d<bool>(new_N,new_N);
+            for(int rti = 0; rti < ((int)full_grid->height())/3; ++rti) {
+                for(int cti = 0; cti < ((int)full_grid->width())/3; ++cti) {
+                    // Extract tile
+                    specific_grid<3> tile(*full_grid,rti*3,cti*3);
+                    // Find replacement
+                    specific_grid<4>& new_tile = map_3_dict[tile];
+                    // Set new grid values
+                    for(int row_i = 0; row_i < 4; ++row_i) {
+                        for(int col_i = 0; col_i < 4; ++col_i) {
+                            new_grid->assign(rti*4+row_i,cti*4+col_i) = new_tile(row_i,col_i);
+                        }
+                    }
+                }
+            }
+            // Swap arrays
+            delete full_grid;
+            full_grid = new_grid;
+		}
         ++it;
         if(verbose) {
             std::cout << "Iteration " << it << std::endl;
