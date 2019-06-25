@@ -123,31 +123,16 @@ int main(int argc, char** argv) {
     int num = 0;
     int num_infected = 0;
     while(num < num_bursts) {
-        if(verbose) {
-            std::cout << "Current " << current_position << " " << dirs[current_dir] << std::endl;
-        }
         auto pos_it = std::find(infected.begin(), infected.end(), current_position);
         if(pos_it == infected.end()) {
-            if(verbose) {
-                std::cout << "Infecting" << std::endl;
-            }
             // Not infected.
             num_infected += 1;
             infected.insert(current_position);
             turn_left();
         } else {
-            if(verbose) {
-                std::cout << "Disinfecting" << std::endl;
-            }
             // infected
             infected.erase(pos_it);
             turn_right();
-        }
-        if(verbose) {
-            std::cout << "new state" << std::endl;
-            for(auto& p: infected) {
-                std::cout << p << std::endl;
-            }
         }
         // advance position
         current_position = current_position+dirs[current_dir];
@@ -161,7 +146,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::cout << num_infected << " computers got infected" << std::endl;
+    std::cout << "Task 1: " << num_infected << " computers got infected" << std::endl;
 
 	return 0;
 }
