@@ -179,7 +179,12 @@ int main(int argc, char** argv) {
     num_infected = 0;
     while(num < num_2) {
         int& the_state = state[current_position];
-        std::cout << "Current " << current_position << " " << dirs[current_dir] << std::endl;
+        if((the_state < 0)||(the_state > 3)) {
+            std::cerr << "Encountered a strange state!: " << the_state << std::endl;
+            std::cerr << "The position was: " << current_position << std::endl;
+            throw;
+        }
+        std::cout << "Current " << current_position << " " << dirs[current_dir] << " s: " << the_state;
         if(the_state == Clean) {
             turn_left();
         } else if (the_state == Weakened) {
@@ -194,6 +199,7 @@ int main(int argc, char** argv) {
         }
         // Increment state
         the_state = inc_state(the_state);
+        std::cout << " -> " << the_state << std::endl;
         // Advance position
         current_position = current_position+dirs[current_dir];
         num += 1;
