@@ -12,8 +12,6 @@
 #include "ArgParseStandalone.h"
 #include "utilities.h"
 
-typedef long type_t;
-
 template<int N>
 class specific_grid {
     public:
@@ -224,73 +222,6 @@ int sum(const array_2d<bool>& map) {
     return total;
 }
 
-class tile_vector: public std::unordered_map<type_t,type_t> {
-    typedef std::unordered_map<type_t,type_t> base;
-    public:
-        tile_vector() = default;
-        tile_vector(const tile_vector& rhs) = default;
-        tile_vector(tile_vector&& rhs) = default;
-        tile_vector& operator=(const tile_vector& rhs) = default;
-        tile_vector operator+(const tile_vector& rhs) {
-            tile_vector answer(*this);
-            for(auto& v: rhs) {
-                answer[v.first] += v.second;
-            }
-            return answer;
-        }
-        tile_vector operator-(const tile_vector& rhs) {
-            tile_vector answer(*this);
-            for(auto& v: rhs) {
-                answer[v.first] -= v.second;
-            }
-            return answer;
-        }
-        type_t operator*(const tile_vector& rhs) {
-            type_t total = 0;
-            for(auto& v: *this) {
-                try {
-                    total += rhs.at(v.first)*v.second;
-                } catch (std::out_of_range& e) {
-                }
-            }
-            return total;
-        }
-        tile_vector operator*(type_t a) {
-            tile_vector answer(*this);
-            for(auto& v: answer) {
-                answer[v.first] = v.second*a;
-            }
-            return answer;
-        }
-        tile_vector& operator+=(const tile_vector& rhs) {
-            for(auto& v: rhs) {
-                (*this)[v.first] += v.second;
-            }
-            return *this;
-        }
-        tile_vector& operator-=(const tile_vector& rhs) {
-            for(auto& v: rhs) {
-                (*this)[v.first] -= v.second;
-            }
-            return *this;
-        }
-		friend std::ostream& operator<<(std::ostream& out, const tile_vector& in);
-};
-
-std::ostream& operator<<(std::ostream& out, const tile_vector& in) {
-	bool first = true;
-	for(auto& v: in) {
-		if(!first) {
-			out << ", ";
-		}
-		out << v.first << ":" << v.second;
-		if(first) {
-			first = false;
-		}
-	}
-	return out;
-}
-
 int main(int argc, char** argv) {
 	// Parse Arguments
 	std::string input_filepath;
@@ -313,15 +244,23 @@ int main(int argc, char** argv) {
 	// Open input as stream
     std::regex rule_pattern("^([.#/]+) => ([.#/]+)$");
     // grid definitions
-    std::unordered_map<type_t,std::vector<specific_grid<2>>> s2_grids;
-    std::unordered_map<type_t,std::vector<specific_grid<3>>> s3_grids;
+    std::unordered_map<int,std::vector<specific_grid<2>>> s2_grids;
+    std::unordered_map<int,std::vector<specific_grid<3>>> s3_grids;
     // Map which s3 tile unique s2 tiles map to 
-    std::unordered_map<type_t,specific_grid<3>> s2_map;
+    std::unordered_map<int,specific_grid<3>> s2_map;
     // Map which s4 tile unique s3 tiles map to
-    std::unordered_map<type_t,specific_grid<4>> s3_map;
-    type_t num_2 = 0;
-    type_t num_3 = 0;
-    type_t num_tiles = 0;
+    std::unordered_map<int,specific_grid<4>> s3_map;
+    // Store a dictionary of what tiles break into other tiles.
+    std::unordered_map<int,std::unordered_map<int,int>> tile_mapping;
+    // Store a dictionary of how many points each tile has
+    std::unordered_map<int,int> point_map;
+    // The current state of the grid
+    std::vector<int> grid_tiles;
+    // The number of tiles there are 
+    std::vector<int> points_on;
+    int num_2 = 0;
+    int num_3 = 0;
+    int num_tiles = 0;
     std::string line;
 	std::ifstream infile(input_filepath);
     while(std::getline(infile, line)) {
@@ -355,38 +294,32 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Store a dictionary of what tiles break into other tiles.
-    std::unordered_map<type_t,tile_vector> tile_mapping;
-    // Store a dictionary of how many points each tile has
-    tile_vector point_map;
-    // The current state of the grid
-    tile_vector grid_tiles;
-
-
-    // tile mapping for 2d tiles.
+    // Complete tile mapping for 2d tiles.
     for(auto& v: s2_map) {
-        type_t s3id = -1;
-        // Find the s3 grid id this set of tiles maps to
+        int s3i = -1;
         for(auto& v2: s3_grids) {
+            for(auto& v3: v2.second) {
+                std::cout << v3 << std::endl;
+            }
             if(hasElement(v2.second,v.second)) {
-                s3id = v2.first;
+                s3i = v2.first;
                 break;
             }
         }
-        if(s3id == -1) {
+        if(s3i == -1) {
             std::cerr << "Warning creating a new tile!" << std::endl;
             // We couldn't find this tile... This must be a new unique tile.
             std::vector<specific_grid<3>> new_tiles = all_unique(v.second);
             s3_grids[num_tiles] = new_tiles;
-            s3id = num_tiles;
+            s3i = num_tiles;
             num_tiles += 1;
         }
-        tile_mapping[v.first][s3id] = 1;
+        tile_mapping[v.first][s3i] = 1;
     }
     // Complete tile mapping for 3d tiles
     for(auto& v: s3_map) {
         // Determine components of the s4 tile
-        tile_vector component_submap;
+        std::unordered_map<int,int> component_submap;
         specific_grid<4>& matched_tile = v.second;
         std::vector<specific_grid<2>> to_test;
         to_test.push_back(specific_grid<2>(matched_tile, 0,0));
@@ -406,7 +339,9 @@ int main(int argc, char** argv) {
                 throw;
             }
         }
-        tile_mapping[v.first] = component_submap;
+        for(auto& v2: component_submap) {
+            tile_mapping[v.first][v2.first] = v2.second;
+        }
     }
 
     // Initialize the point map
@@ -445,34 +380,41 @@ int main(int argc, char** argv) {
 
     // Initial map position
     specific_grid<3> init_grid(".#./..#/###");
-    tile_vector full_grid;
-    tile_vector temp_grid;
+    std::unordered_map<int,int> full_grid;
+    std::unordered_map<int,int> temp_grid;
     for(auto& v: s3_grids) {
         if(hasElement(v.second,init_grid)) {
             full_grid[v.first] = 1;
-            break;
         }
     }
 
+    auto num_on = [&point_map](std::unordered_map<int,int>& grid) {
+        int total = 0;
+        for(auto v: grid) {
+            total += point_map[v.first]*v.second;
+        }
+        return total;
+    };
+
     int it = 0;
     if(verbose) {
-        std::cout << "Iteration " << it << " " << full_grid*point_map << " points on" << std::endl;
-		std::cout << full_grid << std::endl;
+        std::cout << "Iteration " << it << " " << num_on(full_grid) << " points on" << std::endl;
     }
     while(it < num_iterations) {
         std::swap(full_grid, temp_grid);
         full_grid.clear();
         for(auto& v: temp_grid) {
-            full_grid += tile_mapping[v.first]*v.second;
+            for(auto& v2: tile_mapping[v.first]) {
+                full_grid[v2.first] = v.second*v2.second;
+            }
         }
         ++it;
         if(verbose) {
-            std::cout << "Iteration " << it << " " << full_grid*point_map << " points on" << std::endl;
-			std::cout << full_grid << std::endl;
+            std::cout << "Iteration " << it << " " << num_on(full_grid) << " points on" << std::endl;
         }
     }
 
-    std::cout << "Task 1: There were " << full_grid*point_map << " pixels which were on." << std::endl;
+    std::cout << "Task 1: There were " << num_on(full_grid) << " pixels which were on." << std::endl;
 
 	return 0;
 }
