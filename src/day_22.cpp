@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 
     int num = 0;
     int num_infected = 0;
-    while(num < num_bursts) {
+    while(num < 10000) {
         auto pos_it = std::find(infected.begin(), infected.end(), current_position);
         if(pos_it == infected.end()) {
             // Not infected.
