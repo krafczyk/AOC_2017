@@ -61,6 +61,14 @@ class specific_grid {
                 }
             }
         }
+        template<int M>
+        specific_grid(const specific_grid<M>& larger, int b_row, int b_col) {
+            for(int row_i = 0; row_i < N; ++row_i) {
+                for(int col_i = 0; col_i < N; ++col_i) {
+                    grid[row_i][col_i] = larger(b_row+row_i,b_col+col_i);
+                }
+            }
+        }
         specific_grid(const specific_grid<N>& rhs) {
             copy(rhs);
         }
@@ -235,10 +243,24 @@ int main(int argc, char** argv) {
 
 	// Open input as stream
     std::regex rule_pattern("^([.#/]+) => ([.#/]+)$");
-    std::unordered_map<specific_grid<2>,specific_grid<3>,specific_grid_hasher<2>> map_2_dict;
-    std::unordered_map<specific_grid<3>,specific_grid<4>,specific_grid_hasher<3>> map_3_dict;
+    // grid definitions
+    std::unordered_map<int,std::vector<specific_grid<2>>> s2_grids;
+    std::unordered_map<int,std::vector<specific_grid<3>>> s3_grids;
+    // Map which s3 tile unique s2 tiles map to 
+    std::unordered_map<int,specific_grid<3>> s2_map;
+    // Map which s4 tile unique s3 tiles map to
+    std::unordered_map<int,specific_grid<4>> s3_map;
+    // Store a dictionary of what tiles break into other tiles.
+    std::unordered_map<int,std::unordered_map<int,int>> tile_mapping;
+    // Store a dictionary of how many points each tile has
+    std::unordered_map<int,int> point_map;
+    // The current state of the grid
+    std::vector<int> grid_tiles;
+    // The number of tiles there are 
+    std::vector<int> points_on;
     int num_2 = 0;
     int num_3 = 0;
+    int num_tiles = 0;
     std::string line;
 	std::ifstream infile(input_filepath);
     while(std::getline(infile, line)) {
@@ -252,121 +274,140 @@ int main(int argc, char** argv) {
         std::cout << "Left rule: (" << left_rule << ") ";
         std::cout << "Right rule: (" << right_rule << ")" << std::endl;
         if(left_rule.size() == 5) {
+            // We have a definition for a size 2 tile
             num_2 += 1;
             specific_grid<2> left_grid(left_rule);
             specific_grid<3> answer_grid(right_rule);
             std::vector<specific_grid<2>> Left = all_unique(left_grid);
-            for(specific_grid<2>& g: Left) {
-                // Check that this grid isn't already in the map
-                try {
-                    map_2_dict.at(g);
-                    std::cerr << "We should not have encountered this grid (2) before!" << std::endl;
-                    throw;
-                } catch (std::out_of_range& e) {
-                }
-                map_2_dict[g] = answer_grid;
-            }
+            // Add thew new tile definition and advance tile counter.
+            s2_grids[num_tiles] = Left;
+            s2_map[num_tiles] = answer_grid;
+            num_tiles += 1;
         } else if (left_rule.size() == 11) {
             num_3 += 1;
             specific_grid<3> left_grid(left_rule);
             specific_grid<4> answer_grid(right_rule);
             std::vector<specific_grid<3>> Left = all_unique(left_grid);
-            for(specific_grid<3>& g: Left) {
-                // Check that this grid isn't already in the map
-                try {
-                    map_3_dict.at(g);
-                    std::cerr << "We should not have encountered this grid (3) before!" << std::endl;
-                    throw;
-                } catch (std::out_of_range& e) {
-                }
-                map_3_dict[g] = answer_grid;
-            }
+            s3_grids[num_tiles] = Left;
+            s3_map[num_tiles] = answer_grid;
+            num_tiles += 1;
         } else {
             std::cerr << "Got a starting rule which isn't correct!" << std::endl;
         }
     }
 
-    if(verbose) {
-        std::cout << "We got " << num_2 << " separate rules size 2 rules" << std::endl;
-        std::cout << "Resulting in a total of " << map_2_dict.size() << " degenerate rules" << std::endl;
-        std::cout << "We got " << num_3 << " separate rules size 3 rules" << std::endl;
-        std::cout << "Resulting in a total of " << map_3_dict.size() << " degenerate rules" << std::endl;
+    // Complete tile mapping for 2d tiles.
+    std::cout << "s2 tile map building" << std::endl;
+    for(auto& v: s2_map) {
+        int s3i = 0;
+        std::cout << "s3 tile we are trying to match:" << std::endl;
+        std::cout << v.second;
+        for(auto& v2: s3_grids) {
+            std::cout << "Trying to match against grid " << v2.first << std::endl;
+            for(auto& v3: v2.second) {
+                std::cout << v3 << std::endl;
+            }
+            if(hasElement(v2.second,v.second)) {
+                std::cout << "This break reached" << std::endl;
+                s3i = v2.first;
+                break;
+            }
+        }
+        tile_mapping[v.first][s3i] = 1;
+    }
+    // Complete tile mapping for 3d tiles
+    for(auto& v: s3_map) {
+        // Determine components of the s4 tile
+        std::unordered_map<int,int> component_submap;
+        specific_grid<4>& matched_tile = v.second;
+        std::vector<specific_grid<2>> to_test;
+        to_test.push_back(specific_grid<2>(matched_tile, 0,0));
+        to_test.push_back(specific_grid<2>(matched_tile, 0,1));
+        to_test.push_back(specific_grid<2>(matched_tile, 1,0));
+        to_test.push_back(specific_grid<2>(matched_tile, 1,1));
+        for(auto& v2: to_test) {
+            for(auto& v3: s2_grids) {
+                if(hasElement(v3.second, v2)) {
+                    component_submap[v3.first] += 1;
+                }
+            }
+        }
+        for(auto& v2: component_submap) {
+            tile_mapping[v.first][v2.first] = v2.second;
+        }
     }
 
-    // Initialize full grid position
-    array_2d<bool>* full_grid = new array_2d<bool>(3,3);
-    full_grid->assign(0,0) = false;
-    full_grid->assign(0,1) = true;
-    full_grid->assign(0,2) = false;
-    full_grid->assign(1,0) = false;
-    full_grid->assign(1,1) = false;
-    full_grid->assign(1,2) = true;
-    full_grid->assign(2,0) = true;
-    full_grid->assign(2,1) = true;
-    full_grid->assign(2,2) = true;
+    // Initialize the point map
+    for(auto& v: s2_grids) {
+        point_map[v.first] = v.second[0].num();
+    }
+    for(auto& v: s3_grids) {
+        point_map[v.first] = v.second[0].num();
+    }
+
+    if(verbose) {
+        std::cout << "Basics Summary" << std::endl;
+        std::cout << "Unique tiles of size 2" << std::endl;
+        for(auto& v: s2_grids) {
+            std::cout << "Grid " << v.first << ":" << std::endl;
+            for(auto& g: v.second) {
+                std::cout << g << std::endl;
+            }
+        }
+        std::cout << "Unique tiles of size 3" << std::endl;
+        for(auto& v: s3_grids) {
+            std::cout << "Grid " << v.first << ":" << std::endl;
+            for(auto& g: v.second) {
+                std::cout << g << std::endl;
+            }
+        }
+        std::cout << "The tile mapping: " << std::endl;
+        for(auto& v: tile_mapping) {
+            std::cout << v.first << " -> ";
+            for(auto &v2: v.second) {
+                std::cout << v2.first << ":" << v2.second << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    // Initial map position
+    specific_grid<3> init_grid(".#./..#/###");
+    std::unordered_map<int,int> full_grid;
+    std::unordered_map<int,int> temp_grid;
+    for(auto& v: s3_grids) {
+        if(hasElement(v.second,init_grid)) {
+            full_grid[v.first] = 1;
+        }
+    }
+
+    auto num_on = [&point_map](std::unordered_map<int,int>& grid) {
+        int total = 0;
+        for(auto v: grid) {
+            total += point_map[v.first]*v.second;
+        }
+        return total;
+    };
 
     int it = 0;
     if(verbose) {
-        std::cout << "Iteration " << it << std::endl;
-        show(std::cout, *full_grid);
+        std::cout << "Iteration " << it << " " << num_on(full_grid) << " points on" << std::endl;
     }
-
     while(it < num_iterations) {
-        if(full_grid->height()%3 == 0) {
-            // We have a divisible by 3 component.
-            // Initialize a new map
-            int new_N = ((int)full_grid->height()/3)*4;
-            array_2d<bool>* new_grid = new array_2d<bool>(new_N,new_N);
-            for(int rti = 0; rti < ((int)full_grid->height())/3; ++rti) {
-                for(int cti = 0; cti < ((int)full_grid->width())/3; ++cti) {
-                    // Extract tile
-                    specific_grid<3> tile(*full_grid,rti*3,cti*3);
-                    // Find replacement
-                    specific_grid<4>& new_tile = map_3_dict[tile];
-                    // Set new grid values
-                    for(int row_i = 0; row_i < 4; ++row_i) {
-                        for(int col_i = 0; col_i < 4; ++col_i) {
-                            new_grid->assign(rti*4+row_i,cti*4+col_i) = new_tile(row_i,col_i);
-                        }
-                    }
-                }
+        std::swap(full_grid, temp_grid);
+        full_grid.clear();
+        for(auto& v: temp_grid) {
+            for(auto& v2: tile_mapping[v.first]) {
+                full_grid[v2.first] = v.second*v2.second;
             }
-            // Swap arrays
-            delete full_grid;
-            full_grid = new_grid;
-        } else {
-            // Use the other method.
-            // Initialize a new map
-            int new_N = ((int)full_grid->height()/2)*3;
-            array_2d<bool>* new_grid = new array_2d<bool>(new_N,new_N);
-            for(int rti = 0; rti < ((int)full_grid->height())/2; ++rti) {
-                for(int cti = 0; cti < ((int)full_grid->width())/2; ++cti) {
-                    // Extract tile
-                    specific_grid<2> tile(*full_grid,rti*2,cti*2);
-                    // Find replacement
-                    specific_grid<3>& new_tile = map_2_dict[tile];
-                    // Set new grid values
-                    for(int row_i = 0; row_i < 3; ++row_i) {
-                        for(int col_i = 0; col_i < 3; ++col_i) {
-                            new_grid->assign(rti*3+row_i,cti*3+col_i) = new_tile(row_i,col_i);
-                        }
-                    }
-                }
-            }
-            // Swap arrays
-            delete full_grid;
-            full_grid = new_grid;
         }
         ++it;
         if(verbose) {
-            std::cout << "Iteration " << it << std::endl;
-            show(std::cout, *full_grid);
+            std::cout << "Iteration " << it << " " << num_on(full_grid) << " points on" << std::endl;
         }
     }
 
-    std::cout << "Task 1: There were " << sum(*full_grid) << " pixels which were on." << std::endl;
-
-    delete full_grid;
+    std::cout << "Task 1: There were " << num_on(full_grid) << " pixels which were on." << std::endl;
 
 	return 0;
 }
