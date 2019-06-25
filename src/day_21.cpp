@@ -271,8 +271,6 @@ int main(int argc, char** argv) {
         }
         std::string left_rule = rule_match[1].str();
         std::string right_rule = rule_match[2].str();
-        std::cout << "Left rule: (" << left_rule << ") ";
-        std::cout << "Right rule: (" << right_rule << ")" << std::endl;
         if(left_rule.size() == 5) {
             // We have a definition for a size 2 tile
             num_2 += 1;
@@ -297,21 +295,24 @@ int main(int argc, char** argv) {
     }
 
     // Complete tile mapping for 2d tiles.
-    std::cout << "s2 tile map building" << std::endl;
     for(auto& v: s2_map) {
-        int s3i = 0;
-        std::cout << "s3 tile we are trying to match:" << std::endl;
-        std::cout << v.second;
+        int s3i = -1;
         for(auto& v2: s3_grids) {
-            std::cout << "Trying to match against grid " << v2.first << std::endl;
             for(auto& v3: v2.second) {
                 std::cout << v3 << std::endl;
             }
             if(hasElement(v2.second,v.second)) {
-                std::cout << "This break reached" << std::endl;
                 s3i = v2.first;
                 break;
             }
+        }
+        if(s3i == -1) {
+            std::cerr << "Warning creating a new tile!" << std::endl;
+            // We couldn't find this tile... This must be a new unique tile.
+            std::vector<specific_grid<3>> new_tiles = all_unique(v.second);
+            s3_grids[num_tiles] = new_tiles;
+            s3i = num_tiles;
+            num_tiles += 1;
         }
         tile_mapping[v.first][s3i] = 1;
     }
@@ -322,14 +323,20 @@ int main(int argc, char** argv) {
         specific_grid<4>& matched_tile = v.second;
         std::vector<specific_grid<2>> to_test;
         to_test.push_back(specific_grid<2>(matched_tile, 0,0));
-        to_test.push_back(specific_grid<2>(matched_tile, 0,1));
-        to_test.push_back(specific_grid<2>(matched_tile, 1,0));
-        to_test.push_back(specific_grid<2>(matched_tile, 1,1));
+        to_test.push_back(specific_grid<2>(matched_tile, 0,2));
+        to_test.push_back(specific_grid<2>(matched_tile, 2,0));
+        to_test.push_back(specific_grid<2>(matched_tile, 2,2));
         for(auto& v2: to_test) {
+            bool matched = false;
             for(auto& v3: s2_grids) {
                 if(hasElement(v3.second, v2)) {
+                    matched = true;
                     component_submap[v3.first] += 1;
                 }
+            }
+            if(!matched) {
+                std::cerr << "Failed to find a match for a sub-tile!" << std::endl;
+                throw;
             }
         }
         for(auto& v2: component_submap) {
