@@ -269,7 +269,7 @@ b = 109300
 c = 111000
 mult += 1
 
-# N == 100 loops
+# N == 1000 loops
 do {
     f = 1
 
@@ -279,6 +279,7 @@ do {
         if(b%d == 0) {
             # b is divisible by d.
             f = 0
+            break;
         }
         d += 1
     } while(d != b);

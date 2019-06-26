@@ -461,25 +461,43 @@ int main(int argc, char** argv) {
         n += 1;
     }
 
+    // Build prime list
+    type_t b = rs["b"];
+    type_t c = rs["c"];
+
     type_t init = rs["b"];
     (*program[30])(rs);
     type_t skip = rs["b"]-init;
 
-    // Build prime list
-    type_t b = rs["b"];
-    type_t c = rs["c"];
     if(verbose2) {
-        std::cout << "b: " << b << " c: " << c << std::endl;
+        std::cout << "b: " << b << " c: " << c << " skip: " << skip << std::endl;
     }
-
-    std::vector<type_t> primes = gen_primes(std::max(b,c));
 
     type_t h = 0;
-    for(type_t v = std::min(b,c); v <= std::max(b,c); v += skip) {
-        if(hasElement(primes, v)) {
+    // N == 1000 loops
+    do {
+        type_t f = 1;
+
+        // Here, we determine the number of unique factors >= 2
+        type_t d = 2;
+        do {
+            if(b%d == 0) {
+                // b is divisible by d.
+                f = 0;
+                break;
+            }
+            d += 1;
+        } while(d != b);
+
+        if(f == 0) {
             h += 1;
         }
-    }
+
+        if (b == c) {
+            break;
+        }
+        b += skip;
+    } while(true);
 
     std::cout << "Task 2: The h register is: " << h << std::endl;
 
