@@ -243,12 +243,13 @@ int main(int argc, char** argv) {
             std::cerr << "The position was: " << current_position << std::endl;
             throw;
         }
-        std::cout << "Current " << current_position << " " << dirs[current_dir] << " s: " << the_state << "(" << stat_c[the_state] << ")";
+        //std::cout << "Current " << current_position << " " << dirs[current_dir] << " s: " << the_state << "(" << stat_c[the_state] << ")";
         if(the_state == Clean) {
             turn_left();
         } else if (the_state == Weakened) {
-        } else if (the_state == Infected) {
+            // We will infect this one
             num_infected += 1;
+        } else if (the_state == Infected) {
             turn_right();
         } else if (the_state == Flagged) {
             reverse();
@@ -258,21 +259,23 @@ int main(int argc, char** argv) {
         }
         // Increment state
         the_state = inc_state(the_state);
-        std::cout << " -> " << the_state << "(" << stat_c[the_state] << ")" << std::endl;
+        //if(verbose2) {
+        //    std::cout << " -> " << the_state << "(" << stat_c[the_state] << ")" << std::endl;
+        //}
         // Advance position
         current_position = current_position+dirs[current_dir];
         num += 1;
     }
 
     if(verbose2) {
-        std::cout << state_map.size() << " nodes were either visited or have non-clean state" << std::endl;
-        for(const auto& v: state_map) {
-            if(v.second > 4) {
-                std::cout << "Incorrect state!" << std::endl;
-            } else {
-                std::cout << hash_map[v.first] << " " << stat_c[v.second] << std::endl;
-            }
-        }
+        //std::cout << state_map.size() << " nodes were either visited or have non-clean state" << std::endl;
+        //for(const auto& v: state_map) {
+        //    if(v.second > 4) {
+        //        std::cout << "Incorrect state!" << std::endl;
+        //    } else {
+        //        std::cout << hash_map[v.first] << " " << stat_c[v.second] << std::endl;
+        //    }
+        //}
         print_state(current_position, current_dir, state_map, hash_map);
     }
 
