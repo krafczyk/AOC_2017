@@ -218,6 +218,7 @@ do {
 
 Optimized version
 
+a = 0
 b = 93
 c = b = 93
 
@@ -226,13 +227,12 @@ do {
     do {
         e = 2
         do {
-            g = d*e-b
             mult += 1
-            e -= 1
+            e += 1
             g = e
             g -= b
         } while(g != 0);
-        d -= 1
+        d += 1
         g = d
         g -= b
     } while(g != 0);
@@ -244,7 +244,7 @@ do {
     if (g == 0 ) {
         break
     }
-    b -= 17
+    b -= -17
 } while(true);
 
 b = 93
@@ -253,26 +253,54 @@ c = b = 93
 d = 2
 
 e = 2
-g = d*e-b = 4-93 = -89
-e = e-1 = 1
-g = e = 1
-g = g-b = 1-93 = -92
 
-g = d*e-b = 2*1-93 = 2-93 = -91
-e = e-1 = 0
-g = e = 0
-g = g-b = 0-93 = -93
+e = e+1 = 3
+g = e = 3
+g = g-b = 3-93 = -90
 
-g = d*e-b = 2*0-93 = -93
-e = e-1 = -1
-g = e = -1
-g = g-b = -1-93 = -94
+the number of iterations of each loop (n) is determined by
+2+n = 93 -> n = 93-2 = 91
+and mul is called a total of n*n times, for a total of 8281. (task 1!)
 
-g = d*e-b = 2*-1-93 = -95
-e = e-1 = -2
-g = e = -2
-g = g-b = -2-93 = -95
+Optimized version with a = 1
 
-... (loop is executed 4294967205 times)
+a = 1
+b = 109300
+c = 111000
+mult += 1
+
+do {
+    f = 1
+    d = 2
+    do {
+        e = 2
+        do {
+            g = d
+            g *= e
+            g -= b
+            if(g == 0) {
+                f = 0
+            }
+            e += 1
+            g = e
+            g -= b
+        } while(g != 0);
+        d += 1
+        g = d
+        g -= b
+    } while(g != 0);
+
+    if(f == 0) {
+        h += 1
+    }
+    g = b
+    g -= c
+
+    if (g == 0 ) {
+        break
+    }
+    b += 17
+} while(true);
+
 
 
