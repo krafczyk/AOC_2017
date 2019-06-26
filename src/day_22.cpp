@@ -12,7 +12,7 @@
 #include "ArgParseStandalone.h"
 #include "utilities.h"
 
-typedef int type_t;
+typedef long type_t;
 
 class point: public point2d<type_t> {
     public:
@@ -48,6 +48,9 @@ class point: public point2d<type_t> {
             }
             return false;
         }
+        type_t hash() const {
+            return pair_hash_l(this->x, this->y);
+        }
         friend std::ostream& operator<<(std::ostream& out, const point& p) {
             out << p.x << "," << p.y;
             return out;
@@ -67,9 +70,62 @@ const int Infected = 2;
 const int Flagged = 3;
 
 char stat_c[4] = { '.', 'W', '#', 'F' };
+std::string dir_str[4] = { "right", "up", "left", "down" };
 
 int inc_state(int S) {
     return (S+1)%4;
+}
+
+void print_state(const point& current_point, const int current_dir, const std::map<type_t,int>& state_map, const std::map<type_t,point>& point_map) {
+    // Determine extents
+    type_t min_x = std::numeric_limits<type_t>::max();
+    type_t max_x = std::numeric_limits<type_t>::min();
+    type_t min_y = std::numeric_limits<type_t>::max();
+    type_t max_y = std::numeric_limits<type_t>::min();
+    for(auto& P: point_map) {
+        const point& p =  P.second;
+        max_x = std::max(p.x,max_x);
+        min_x = std::min(p.x,min_x);
+        max_y = std::max(p.y,max_y);
+        min_y = std::min(p.y,min_y);
+    }
+    max_x = std::max(current_point.x,max_x);
+    max_y = std::max(current_point.y,max_y);
+    min_x = std::min(current_point.x,min_x);
+    min_y = std::min(current_point.y,min_y);
+    // Report current direction
+    std::cout << "at " << current_point << " going " << dir_str[current_dir] << std::endl;
+    for(type_t y = max_y; y >= min_y; --y) {
+        for(type_t x = min_x; x <= max_x; ++x) {
+            bool left_space = true;
+            if(x > min_x) {
+                if(current_point == point(x-1,y)) {
+                    std::cout << "]";
+                    left_space = false;
+                }
+            }
+            if (current_point == point(x,y)) {
+                std::cout << "[";
+                left_space = false;
+            }
+            if(left_space) {
+                std::cout << " ";
+            }
+            try {
+                std::cout << stat_c[state_map.at(point(x,y).hash())];
+            } catch (std::out_of_range& e) {
+                std::cout << stat_c[Clean];
+            }
+            if(x == max_x) {
+                if(current_point == point(x,y)) {
+                    std::cout << "]";
+                } else {
+                    std::cout << " ";
+                }
+            }
+        }
+        std::cout << std::endl;
+    }
 }
 
 int main(int argc, char** argv) {
@@ -167,10 +223,12 @@ int main(int argc, char** argv) {
 
     std::cout << "Task 1: " << num_infected << " computers got infected" << std::endl;
 
-    std::map<point,int> state;
+    std::map<type_t,int> state_map;
+    std::map<type_t,point> hash_map;
 
     for(const point& p: initially_infected) {
-        state[p] = Infected;
+        state_map[p.hash()] = Infected;
+        hash_map[p.hash()] = p;
     }
 
     current_position = point(0,0);
@@ -178,13 +236,14 @@ int main(int argc, char** argv) {
     num = 0;
     num_infected = 0;
     while(num < num_2) {
-        int& the_state = state[current_position];
+        int& the_state = state_map[current_position.hash()];
+        hash_map[current_position.hash()] = current_position;
         if((the_state < 0)||(the_state > 3)) {
             std::cerr << "Encountered a strange state!: " << the_state << std::endl;
             std::cerr << "The position was: " << current_position << std::endl;
             throw;
         }
-        std::cout << "Current " << current_position << " " << dirs[current_dir] << " s: " << the_state;
+        std::cout << "Current " << current_position << " " << dirs[current_dir] << " s: " << the_state << "(" << stat_c[the_state] << ")";
         if(the_state == Clean) {
             turn_left();
         } else if (the_state == Weakened) {
@@ -199,20 +258,22 @@ int main(int argc, char** argv) {
         }
         // Increment state
         the_state = inc_state(the_state);
-        std::cout << " -> " << the_state << std::endl;
+        std::cout << " -> " << the_state << "(" << stat_c[the_state] << ")" << std::endl;
         // Advance position
         current_position = current_position+dirs[current_dir];
         num += 1;
     }
 
     if(verbose2) {
-        for(const auto& v: state) {
+        std::cout << state_map.size() << " nodes were either visited or have non-clean state" << std::endl;
+        for(const auto& v: state_map) {
             if(v.second > 4) {
                 std::cout << "Incorrect state!" << std::endl;
             } else {
-                std::cout << v.first << " " << stat_c[v.second] << std::endl;
+                std::cout << hash_map[v.first] << " " << stat_c[v.second] << std::endl;
             }
         }
+        print_state(current_position, current_dir, state_map, hash_map);
     }
 
     std::cout << "Task 2: " << num_infected << " computers got infected" << std::endl;
