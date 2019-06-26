@@ -52,6 +52,28 @@ type_t strongest_bridge(type_t v, std::vector<point>& components) {
     return strength;
 }
 
+std::pair<type_t,type_t> strongest_longest_bridge(type_t v, std::vector<point>& components) {
+    type_t max_length = 0;
+    type_t max_strength = 0;
+    for(size_t i = 0; i < components.size(); ++i) {
+        if(valid_component(v, components[i])) {
+            std::vector<point> temp = components;
+            temp.erase(temp.begin()+i);
+
+            std::pair<type_t,type_t> result = strongest_longest_bridge(other_component(v,components[i]),temp);
+            result.first += 1;
+            result.second += component_strength(components[i]);
+            if(result.first > max_length) {
+                max_length = result.first;
+                max_strength = result.second;
+            } else if(result.first == max_length) {
+                max_strength = std::max(max_strength, result.second);
+            }
+        }
+    }
+    return std::pair<type_t,type_t>(max_length,max_strength);
+}
+
 int main(int argc, char** argv) {
 	// Parse Arguments
 	std::string input_filepath;
@@ -92,6 +114,8 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "Task 1: strongest bridge has strength: " << strongest_bridge(0, components) << std::endl;
+
+    std::cout << "Task 2: strongest longest bridge strength: " << strongest_longest_bridge(0, components).second << std::endl;
 
 	return 0;
 }
