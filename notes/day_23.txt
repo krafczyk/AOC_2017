@@ -269,34 +269,25 @@ b = 109300
 c = 111000
 mult += 1
 
+# N == 100 loops
 do {
     f = 1
+
+    # Here, we determine the number of unique factors >= 2
     d = 2
     do {
-        e = 2
-        do {
-            g = d
-            g *= e
-            g -= b
-            if(g == 0) {
-                f = 0
-            }
-            e += 1
-            g = e
-            g -= b
-        } while(g != 0);
+        if(b%d == 0) {
+            # b is divisible by d.
+            f = 0
+        }
         d += 1
-        g = d
-        g -= b
-    } while(g != 0);
+    } while(d != b);
 
     if(f == 0) {
         h += 1
     }
-    g = b
-    g -= c
 
-    if (g == 0 ) {
+    if (b == c ) {
         break
     }
     b += 17

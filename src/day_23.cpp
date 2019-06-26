@@ -348,16 +348,39 @@ instruction* InstructionFactory(const std::vector<std::string>& words) {
     throw;
 }
 
+std::vector<type_t> gen_primes(type_t N) {
+    std::vector<type_t> primes;
+    primes.push_back(2);
+    for(int f = 3; f <= N; ++f) {
+        bool factor_found = false;
+        for(size_t i = 0; i < primes.size(); ++i) {
+            if(f%primes[i] == 0) {
+                factor_found = true;
+                break;
+            }
+        }
+        if(!factor_found) {
+            primes.push_back(f);
+        }
+    }
+    return primes;
+}
+
 int main(int argc, char** argv) {
 	// Parse Arguments
 	std::string input_filepath;
-	bool verbose = false;
-    size_t num = 0;
-    bool num_defined = false;
+	bool verbose1 = false;
+	bool verbose2 = false;
+    size_t num1 = 0;
+    bool num1_defined = false;
+    size_t num2 = 0;
+    bool num2_defined = false;
 	ArgParse::ArgParser Parser("Day 23");
 	Parser.AddArgument("-i/--input", "File defining the input", &input_filepath);
-	Parser.AddArgument("-v/--verbose", "Print Verbose output", &verbose);
-    Parser.AddArgument("-n/--num", "number of instructions to execute", &num, ArgParse::Argument::Optional, &num_defined);
+	Parser.AddArgument("-v1/--verbose1", "Print Verbose output", &verbose1);
+    Parser.AddArgument("-n1/--num1", "number of instructions to execute", &num1, ArgParse::Argument::Optional, &num1_defined);
+	Parser.AddArgument("-v2/--verbose2", "Print Verbose output", &verbose2);
+    Parser.AddArgument("-n2/--num2", "number of instructions to execute", &num2, ArgParse::Argument::Optional, &num2_defined);
 
 	if (Parser.ParseArgs(argc, argv) < 0) {
 		std::cerr << "Problem parsing arguments!" << std::endl;
@@ -393,8 +416,8 @@ int main(int argc, char** argv) {
 
     std::cout << "Initial registers: " << rs << std::endl;
     size_t n = 0;
-    while((rs[ip] >= 0) && (rs[ip] < (type_t)program.size()) && ((!num_defined)||(n < num))) {
-        if(verbose) {
+    while((rs[ip] >= 0) && (rs[ip] < (type_t)program.size()) && ((!num1_defined)||(n < num1))) {
+        if(verbose1) {
             std::cout << rs[ip] << ": " << (*program[rs[ip]]) << " -- ";
         }
         // Execute instruction
@@ -405,13 +428,55 @@ int main(int argc, char** argv) {
             std::cerr << "This shouldn't happen here!!" << std::endl;
             throw;
         }
-        if(verbose) {
+        if(verbose1) {
             std::cout << rs << std::endl;
         }
         n += 1;
     }
 
-    std::cout << "mul instructions were executed " << num_mul << " times" << std::endl;
+    std::cout << "Task 1: mul instructions were executed " << num_mul << " times" << std::endl;
+
+    // Initialize the registers
+
+    rs.clear();
+    rs[ip] = 0;
+    rs["a"] = 1;
+
+    n = 0;
+    while((rs[ip] >= 0) && (rs[ip] < (type_t)program.size()) && (n < 8)) {
+        if(verbose2) {
+            std::cout << rs[ip] << ": " << (*program[rs[ip]]) << " -- ";
+        }
+        // Execute instruction
+        if((*program[rs[ip]])(rs)) {
+            // Advance to next instruction
+            rs[ip] += 1;
+        } else {
+            std::cerr << "This shouldn't happen here!!" << std::endl;
+            throw;
+        }
+        if(verbose2) {
+            std::cout << rs << std::endl;
+        }
+        n += 1;
+    }
+
+    // Build prime list
+    type_t b = rs["b"];
+    type_t c = rs["c"];
+    if(verbose2) {
+        std::cout << "b: " << b << " c: " << c << std::endl;
+    }
+    std::vector<type_t> primes = gen_primes(std::max(b,c));
+
+    type_t h = 0;
+    for(type_t v = std::min(b,c); v <= std::max(b,c); ++v) {
+        if(hasElement(primes, v)) {
+            h += 1;
+        }
+    }
+
+    std::cout << "Task 2: The h register is: " << h << std::endl;
 
 	return 0;
 }
