@@ -14,37 +14,86 @@
 
 typedef long type_t;
 typedef std::unordered_map<std::string,type_t> registers;
+
+std::ostream& operator<<(std::ostream& out, const registers& rs) {
+    for(auto it = rs.cbegin(); it != rs.cend(); ++it) {
+        out << it->first << ":" << it->second << " ";
+    }
+    return out;
+}
+
 const std::string ip = "ip";
 
 size_t num_mul = 0;
 
 class instruction {
     public:
+        instruction(const std::string& n) {
+            this->n = n;
+        }
         virtual ~instruction() {}
         virtual bool operator()(registers& r) = 0;
+        virtual std::string str() const = 0;
+        friend std::ostream& operator<<(std::ostream& out, instruction& i) {
+            out << i.str();
+            return out;
+        }
+        const std::string& name() const {
+            return this->n;
+        }
+    private:
+        std::string n;
 };
 
 class inst_2v: public instruction {
     public:
-        inst_2v(const std::string& reg, type_t v) {
+        inst_2v(const std::string& n, const std::string& reg, type_t v) : instruction(n) {
             this->reg = reg;
             this->v = v;
         }
         virtual ~inst_2v() {}
         virtual bool operator()(registers& r) = 0;
+        std::string str() const {
+            std::stringstream ss;
+            ss << name() << " " << reg << " " << v;
+            return ss.str();
+        }
     protected:
         std::string reg;
         type_t v;
 };
 
+class inst_2vv: public instruction {
+    public:
+        inst_2vv(const std::string& n, type_t v1, type_t v2) : instruction(n) {
+            this->v1 = v1;
+            this->v2 = v2;
+        }
+        virtual ~inst_2vv() {}
+        virtual bool operator()(registers& r) = 0;
+        std::string str() const {
+            std::stringstream ss;
+            ss << name() << " " << v1 << " " << v2;
+            return ss.str();
+        }
+    protected:
+        type_t v1;
+        type_t v2;
+};
+
 class inst_2r: public instruction {
     public:
-        inst_2r(const std::string& regl, const std::string& regr) {
+        inst_2r(const std::string& n, const std::string& regl, const std::string& regr) : instruction(n) {
             this->regl = regl;
             this->regr = regr;
         }
         virtual ~inst_2r() {}
         virtual bool operator()(registers& r) = 0;
+        std::string str() const {
+            std::stringstream ss;
+            ss << name() << " " << regl << " " << regr;
+            return ss.str();
+        }
     protected:
         std::string regl;
         std::string regr;
@@ -52,29 +101,39 @@ class inst_2r: public instruction {
 
 class inst_1v: public instruction {
     public:
-        inst_1v(type_t v) {
+        inst_1v(const std::string& n, type_t v) : instruction(n) {
             this->v = v;
         }
         virtual ~inst_1v() {}
         virtual bool operator()(registers& r) = 0;
+        std::string str() const {
+            std::stringstream ss;
+            ss << name() << " " << v;
+            return ss.str();
+        }
     protected:
         type_t v;
 };
 
 class inst_1r: public instruction {
     public:
-        inst_1r(const std::string& reg) {
+        inst_1r(const std::string& n, const std::string& reg) : instruction(n) {
             this->reg = reg;
         }
         virtual ~inst_1r() {}
         virtual bool operator()(registers& r) = 0;
+        std::string str() const {
+            std::stringstream ss;
+            ss << name() << " " << reg;
+            return ss.str();
+        }
     protected:
         std::string reg;
 };
 
 class setv: public inst_2v {
     public:
-        setv(const std::string& reg, type_t v) : inst_2v(reg, v) {}
+        setv(const std::string& reg, type_t v) : inst_2v("set", reg, v) {}
         bool operator()(registers& r) {
             r[reg] = v;
             return true;
@@ -83,7 +142,7 @@ class setv: public inst_2v {
 
 class setr: public inst_2r {
     public:
-        setr(const std::string& regl, const std::string& regr) : inst_2r(regl, regr) {}
+        setr(const std::string& regl, const std::string& regr) : inst_2r("set", regl, regr) {}
         bool operator()(registers& r) {
             r[regl] = r[regr];
             return true;
@@ -92,7 +151,7 @@ class setr: public inst_2r {
 
 class addv: public inst_2v {
     public:
-        addv(const std::string& reg, type_t v): inst_2v(reg, v) {}
+        addv(const std::string& reg, type_t v): inst_2v("add", reg, v) {}
         bool operator()(registers& r) {
             r[reg] += v;
             return true;
@@ -101,7 +160,7 @@ class addv: public inst_2v {
 
 class addr: public inst_2r {
     public:
-        addr(const std::string& regl, const std::string& regr): inst_2r(regl, regr) {}
+        addr(const std::string& regl, const std::string& regr): inst_2r("add", regl, regr) {}
         bool operator()(registers& r) {
             r[regl] += r[regr];
             return true;
@@ -110,7 +169,7 @@ class addr: public inst_2r {
 
 class subv: public inst_2v {
     public:
-        subv(const std::string& reg, type_t v): inst_2v(reg, v) {}
+        subv(const std::string& reg, type_t v): inst_2v("sub", reg, v) {}
         bool operator()(registers& r) {
             r[reg] -= v;
             return true;
@@ -119,7 +178,7 @@ class subv: public inst_2v {
 
 class subr: public inst_2r {
     public:
-        subr(const std::string& regl, const std::string& regr): inst_2r(regl, regr) {}
+        subr(const std::string& regl, const std::string& regr): inst_2r("sub", regl, regr) {}
         bool operator()(registers& r) {
             r[regl] -= r[regr];
             return true;
@@ -128,7 +187,7 @@ class subr: public inst_2r {
 
 class mulv: public inst_2v {
     public:
-        mulv(const std::string& reg, type_t v): inst_2v(reg, v) {}
+        mulv(const std::string& reg, type_t v): inst_2v("mul", reg, v) {}
         bool operator()(registers& r) {
             num_mul += 1;
             r[reg] *= v;
@@ -138,7 +197,7 @@ class mulv: public inst_2v {
 
 class mulr: public inst_2r {
     public:
-        mulr(const std::string& regl, const std::string& regr): inst_2r(regl, regr) {}
+        mulr(const std::string& regl, const std::string& regr): inst_2r("mul", regl, regr) {}
         bool operator()(registers& r) {
             num_mul += 1;
             r[regl] *= r[regr];
@@ -148,7 +207,7 @@ class mulr: public inst_2r {
 
 class modv: public inst_2v {
     public:
-        modv(const std::string& reg, type_t v): inst_2v(reg, v) {}
+        modv(const std::string& reg, type_t v): inst_2v("mod", reg, v) {}
         bool operator()(registers& r) {
             r[reg] %= v;
             return true;
@@ -157,7 +216,7 @@ class modv: public inst_2v {
 
 class modr: public inst_2r {
     public:
-        modr(const std::string& regl, const std::string& regr): inst_2r(regl, regr) {}
+        modr(const std::string& regl, const std::string& regr): inst_2r("mod", regl, regr) {}
         bool operator()(registers& r) {
             r[regl] %= r[regr];
             return true;
@@ -166,7 +225,7 @@ class modr: public inst_2r {
 
 class jgzv: public inst_2v {
     public:
-        jgzv(const std::string& reg, type_t v): inst_2v(reg, v) {}
+        jgzv(const std::string& reg, type_t v): inst_2v("jgz", reg, v) {}
         bool operator()(registers& r) {
             if(r[reg] > 0) {
                 r[ip] += (v-1);
@@ -177,7 +236,7 @@ class jgzv: public inst_2v {
 
 class jgzr: public inst_2r {
     public:
-        jgzr(const std::string& regl, const std::string& regr): inst_2r(regl, regr) {}
+        jgzr(const std::string& regl, const std::string& regr): inst_2r("jgz", regl, regr) {}
         bool operator()(registers& r) {
             if(r[regl] > 0) {
                 r[ip] += (r[regr]-1);
@@ -188,7 +247,7 @@ class jgzr: public inst_2r {
 
 class jnzv: public inst_2v {
     public:
-        jnzv(const std::string& reg, type_t v): inst_2v(reg, v) {}
+        jnzv(const std::string& reg, type_t v): inst_2v("jnz", reg, v) {}
         bool operator()(registers& r) {
             if(r[reg] != 0) {
                 r[ip] += (v-1);
@@ -197,9 +256,20 @@ class jnzv: public inst_2v {
         }
 };
 
+class jnzvv: public inst_2vv {
+    public:
+        jnzvv(type_t v1, type_t v2): inst_2vv("jnz", v1, v2) {}
+        bool operator()(registers& r) {
+            if(v1 != 0) {
+                r[ip] += (v2-1);
+            }
+            return true;
+        }
+};
+
 class jnzr: public inst_2r {
     public:
-        jnzr(const std::string& regl, const std::string& regr): inst_2r(regl, regr) {}
+        jnzr(const std::string& regl, const std::string& regr): inst_2r("jnz", regl, regr) {}
         bool operator()(registers& r) {
             if(r[regl] != 0) {
                 r[ip] += (r[regr]-1);
@@ -256,10 +326,19 @@ instruction* InstructionFactory(const std::vector<std::string>& words) {
             return (instruction*) new jgzv(words[1], fetch_value<type_t>(words[2]));
         }
     } else if (words[0] == "jnz") {
-        if(is_register(words[2])) {
-            return (instruction*) new jnzr(words[1], words[2]);
+        if(is_register(words[1])) {
+            if(is_register(words[2])) {
+                return (instruction*) new jnzr(words[1], words[2]);
+            } else {
+                return (instruction*) new jnzv(words[1], fetch_value<type_t>(words[2]));
+            }
         } else {
-            return (instruction*) new jnzv(words[1], fetch_value<type_t>(words[2]));
+            if(is_register(words[2])) {
+                std::cerr << "register second word is not supported when jnz accepts a value as the first value" << std::endl;
+                throw;
+            } else {
+                return (instruction*) new jnzvv(fetch_value<type_t>(words[1]), fetch_value<type_t>(words[2]));
+            }
         }
     } else {
         std::cerr << "Encountered an unknown command!" << std::endl;
@@ -273,9 +352,12 @@ int main(int argc, char** argv) {
 	// Parse Arguments
 	std::string input_filepath;
 	bool verbose = false;
+    size_t num = 0;
+    bool num_defined = false;
 	ArgParse::ArgParser Parser("Day 23");
 	Parser.AddArgument("-i/--input", "File defining the input", &input_filepath);
 	Parser.AddArgument("-v/--verbose", "Print Verbose output", &verbose);
+    Parser.AddArgument("-n/--num", "number of instructions to execute", &num, ArgParse::Argument::Optional, &num_defined);
 
 	if (Parser.ParseArgs(argc, argv) < 0) {
 		std::cerr << "Problem parsing arguments!" << std::endl;
@@ -301,12 +383,6 @@ int main(int argc, char** argv) {
         std::vector<std::string> instruction_pieces;
         for(size_t i = 1; i < match.size(); ++i) {
             instruction_pieces.push_back(match[i].str());
-            if(verbose) {
-                std::cout << match[i] << " ";
-            }
-        }
-        if(verbose) {
-            std::cout << std::endl;
         }
         program.push_back(InstructionFactory(instruction_pieces));
     }
@@ -315,7 +391,12 @@ int main(int argc, char** argv) {
     registers rs;
     rs[ip] = 0;
 
-    while((rs[ip] >= 0) && (rs[ip] < (type_t)program.size())) {
+    std::cout << "Initial registers: " << rs << std::endl;
+    size_t n = 0;
+    while((rs[ip] >= 0) && (rs[ip] < (type_t)program.size()) && ((!num_defined)||(n < num))) {
+        if(verbose) {
+            std::cout << rs[ip] << ": " << (*program[rs[ip]]) << " -- ";
+        }
         // Execute instruction
         if((*program[rs[ip]])(rs)) {
             // Advance to next instruction
@@ -324,6 +405,10 @@ int main(int argc, char** argv) {
             std::cerr << "This shouldn't happen here!!" << std::endl;
             throw;
         }
+        if(verbose) {
+            std::cout << rs << std::endl;
+        }
+        n += 1;
     }
 
     std::cout << "mul instructions were executed " << num_mul << " times" << std::endl;
