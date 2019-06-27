@@ -46,11 +46,11 @@ class state {
             out << "If the current value is 0:" << std::endl;
             out << "  - Write the value " << st.v0 << "." << std::endl;
             out << "  - Move one slot to the " << dir_map[st.dir0] << "." << std::endl;
-            out << "  - Continue with state " << ('A'+st.state0) << "." << std::endl;
+            out << "  - Continue with state " << (char)('A'+st.state0) << "." << std::endl;
             out << "If the current value is 1:" << std::endl;
             out << "  - Write the value " << st.v1 << "." << std::endl;
             out << "  - Move one slot to the " << dir_map[st.dir1] << "." << std::endl;
-            out << "  - Continue with state " << ('A'+st.state1) << "." << std::endl;
+            out << "  - Continue with state " << (char)('A'+st.state1) << "." << std::endl;
             return out;
         }
     private:
@@ -105,8 +105,7 @@ int main(int argc, char** argv) {
 
     auto get_state = [&max_state](const std::string& in) {
         type_t v = ((unsigned char)in[0])-((unsigned char)'A');
-        std::cout << "Getting state! " << v << std::endl;
-        std::max(max_state,v);
+        max_state = std::max(max_state,v);
         return v;
     };
 
@@ -156,7 +155,6 @@ int main(int argc, char** argv) {
         }
         get_line();
         temp = get_value(line, st_pattern);
-        std::cout << "state: " << temp << std::endl;
         state0 = get_state(temp);
 
         get_line();
@@ -172,7 +170,6 @@ int main(int argc, char** argv) {
         }
         get_line();
         temp = get_value(line, st_pattern);
-        std::cout << "state: " << temp << std::endl;
         state1 = get_state(temp);
 
         state_map[state_i] = new state(v0,dir0,state0,v1,dir1,state1);
@@ -181,10 +178,13 @@ int main(int argc, char** argv) {
 
     // Build state array
     state** states = new state*[max_state+1];
+    for(type_t i = 0; i <= max_state; ++i) {
+        states[i] = state_map[i];
+    }
 
     if(verbose) {
         std::cout << "We extracted the following program: " << std::endl;
-        for(size_t i = 0; i < num_steps; ++i) {
+        for(size_t i = 0; i < (size_t) max_state+1; ++i) {
             std::cout << "State " << i << std::endl;
             std::cout << *states[i] << std::endl;
         }
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
     type_t current_position = 0;
     for(size_t i = 0; i < num_steps; ++i) {
         if(verbose) {
-            if(i%1000000) {
+            if((i != 0)&&(i%1000000 == 0)) {
                 std::cout << i << " steps run so far." << std::endl;
             }
         }
